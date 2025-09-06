@@ -110,7 +110,15 @@ export const useGameState = () => {
   }, []);
 
   const allocateDoctor = useCallback((countryId: string) => {
-    if (gameState.availableDoctors <= 0) return;
+    if (gameState.availableDoctors <= 0) {
+      setGameState(prevState => ({
+        ...prevState,
+        monthlyEvents: [...prevState.monthlyEvents, 
+          "No available doctors to send."
+        ]
+      }));
+      return;
+    }
 
     setCountries(prev => {
       const country = prev.find(c => c.id === countryId);
@@ -131,23 +139,48 @@ export const useGameState = () => {
         return prev;
       }
       
-      return prev.map(c => 
+      // Update countries state and game state atomically
+      const updatedCountries = prev.map(c => 
         c.id === countryId 
           ? { ...c, doctorsAssigned: c.doctorsAssigned + 1 }
           : c
       );
+      
+      // Update game state with the new available doctors count
+      setGameState(prevState => ({
+        ...prevState,
+        availableDoctors: Math.max(0, prevState.availableDoctors - 1),
+      }));
+      
+      return updatedCountries;
     });
-
-    setGameState(prev => ({
-      ...prev,
-      availableDoctors: prev.availableDoctors - 1,
-    }));
   }, [gameState.availableDoctors]);
 
   const recallDoctor = useCallback((countryId: string) => {
     setCountries(prev => {
       const country = prev.find(c => c.id === countryId);
-      if (!country || country.doctorsAssigned <= 0) return prev;
+      if (!country || country.doctorsAssigned <= 0) {
+        setGameState(prevState => ({
+          ...prevState,
+          monthlyEvents: [...prevState.monthlyEvents, 
+            `${country?.name || 'This country'} has no doctors to recall.`
+          ]
+        }));
+        return prev;
+      }
+
+      // Calculate total assigned doctors after recall to ensure we don't exceed totalDoctors
+      const totalAssignedAfterRecall = prev.reduce((sum, c) => 
+        sum + (c.id === countryId ? c.doctorsAssigned - 1 : c.doctorsAssigned), 0
+      );
+      
+      const newAvailableDoctors = gameState.totalDoctors - totalAssignedAfterRecall;
+      
+      // Update game state with proper validation
+      setGameState(prevState => ({
+        ...prevState,
+        availableDoctors: Math.max(0, Math.min(newAvailableDoctors, prevState.totalDoctors)),
+      }));
 
       return prev.map(c => 
         c.id === countryId 
@@ -155,12 +188,7 @@ export const useGameState = () => {
           : c
       );
     });
-
-    setGameState(prev => ({
-      ...prev,
-      availableDoctors: prev.availableDoctors + 1,
-    }));
-  }, []);
+  }, [gameState.totalDoctors]);
 
   const advanceMonth = useCallback(() => {
     const newMonth = gameState.currentMonth === 12 ? 1 : gameState.currentMonth + 1;
@@ -189,7 +217,7 @@ export const useGameState = () => {
       infectionChange += (monthsElapsed / 10); // Gradually increasing difficulty (from /12 to /10)
     }
 
-    let newGlobalInfection = Math.max(0, Math.min(100, gameState.globalInfection + infectionChange));
+    const newGlobalInfection = Math.max(0, Math.min(100, gameState.globalInfection + infectionChange));
 
     // Handle special events
     let doctorsLostThisMonth = 0;
@@ -197,11 +225,20 @@ export const useGameState = () => {
     
     if (randomEvent.includes("Doctor burnout")) {
       doctorsLostThisMonth = Math.floor(Math.random() * 2) + 1; // Lose 1 or 2 doctors
-      setGameState(prev => ({
-        ...prev,
-        totalDoctors: Math.max(0, prev.totalDoctors - doctorsLostThisMonth),
-        availableDoctors: Math.max(0, prev.availableDoctors - doctorsLostThisMonth),
-      }));
+      
+      // Calculate total assigned doctors to ensure available doctors count is valid
+      const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+      
+      setGameState(prev => {
+        const newTotalDoctors = Math.max(0, prev.totalDoctors - doctorsLostThisMonth);
+        const newAvailableDoctors = Math.max(0, newTotalDoctors - totalAssignedDoctors);
+        
+        return {
+          ...prev,
+          totalDoctors: newTotalDoctors,
+          availableDoctors: newAvailableDoctors,
+        };
+      });
     }
     
     if (randomEvent.includes("Vaccine research setback")) {
@@ -294,7 +331,7 @@ export const useGameState = () => {
     }
 
     // Generate event message
-    let eventMessages = [randomEvent];
+    const eventMessages = [randomEvent];
     if (doctorsLostThisMonth > 0) {
       eventMessages.push(`Doctor burnout: Lost ${doctorsLostThisMonth} doctor(s).`);
     }
@@ -328,12 +365,28 @@ export const useGameState = () => {
 
       return {
         ...prev,
-        availableDoctors: prev.availableDoctors - 2,
+        availableDoctors: Math.max(0, prev.availableDoctors - 2),
         vaccineProgress: Math.min(100, prev.vaccineProgress + boost),
         monthlyEvents: [...prev.monthlyEvents, `Research Investment: Vaccine research boosted by ${boost}%!`]
       };
     });
   }, []);
+
+  // Validation function to ensure doctor counts are consistent
+  const validateDoctorCounts = useCallback(() => {
+    const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+    const expectedAvailableDoctors = gameState.totalDoctors - totalAssignedDoctors;
+    
+    if (gameState.availableDoctors !== expectedAvailableDoctors) {
+      console.warn(`Doctor count mismatch detected. Expected available: ${expectedAvailableDoctors}, actual: ${gameState.availableDoctors}`);
+      
+      setGameState(prev => ({
+        ...prev,
+        availableDoctors: Math.max(0, Math.min(expectedAvailableDoctors, prev.totalDoctors)),
+        monthlyEvents: [...prev.monthlyEvents, "Doctor count discrepancy detected and corrected."]
+      }));
+    }
+  }, [countries, gameState.availableDoctors, gameState.totalDoctors]);
 
   return {
     gameState,
@@ -344,5 +397,6 @@ export const useGameState = () => {
     advanceMonth,
     resetGame,
     researchInvestment,
+    validateDoctorCounts,
   };
 };

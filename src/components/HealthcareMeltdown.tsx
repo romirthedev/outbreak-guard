@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameState } from '@/hooks/useGameState';
 import { StartScreen } from '@/components/StartScreen';
 import { GameHUD } from '@/components/GameHUD';
@@ -17,6 +17,7 @@ export const HealthcareMeltdown = () => {
     advanceMonth,
     resetGame,
     researchInvestment,
+    validateDoctorCounts,
   } = useGameState();
 
   const handleStartGame = () => {
@@ -36,6 +37,13 @@ export const HealthcareMeltdown = () => {
     setShowHowToPlay(false);
     resetGame();
   };
+
+  // Validate doctor counts periodically to catch any discrepancies
+  useEffect(() => {
+    if (gameState.gameStatus === 'playing') {
+      validateDoctorCounts();
+    }
+  }, [gameState.gameStatus, validateDoctorCounts]);
 
   // Show How to Play screen
   if (showHowToPlay) {
