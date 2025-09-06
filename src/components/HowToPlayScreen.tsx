@@ -35,7 +35,7 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
             </div>
             <p className="text-muted-foreground">
               You are managing a global hospital network during the COVID-19 pandemic (2021-2025). 
-              Your goal is to hold the pandemic at bay long enough for scientists to develop a vaccine by January 2025.
+              Your goal: Hold the pandemic at bay long enough for scientists to develop a vaccine by January 2025.
             </p>
             <div className="bg-primary/10 border border-primary/30 rounded p-3">
               <p className="text-sm text-primary-glow font-semibold">
