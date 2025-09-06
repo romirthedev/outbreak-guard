@@ -5,28 +5,10 @@ export type MonthlyEffect = {
   value: number;
 };
 
-export interface Country {
+export interface MonthlyChoiceOption {
   id: string;
-  name: string;
-  population: number;
-  infectionLevel: number; // 0-100
-  doctorsAssigned: number;
-  isHotspot: boolean;
-  x: number; // Position on map (percentage)
-  y: number; // Position on map (percentage)
-}
-
-export interface GameState {
-  currentMonth: number;
-  currentYear: number;
-  availableDoctors: number;
-  totalDoctors: number;
-  globalInfection: number; // 0-100
-  vaccineProgress: number; // 0-100
-  gameStatus: 'menu' | 'playing' | 'won' | 'lost';
-  monthlyEvents: string[];
-  researchCommittedDoctors: number; // Doctors allocated to research investment
-  lastVaccineDelta: number; // Progress gained during the last month advancement
+  text: string;
+  effect: MonthlyEffect;
 }
 
 export interface Country {
@@ -42,19 +24,33 @@ export interface Country {
   y: number; // Position on map (percentage)
 }
 
+export interface GameState {
+  currentMonth: number;
+  currentYear: number;
+  availableDoctors: number;
+  totalDoctors: number;
+  globalInfection: number; // 0-100
+  vaccineProgress: number; // 0-100
+  gameStatus: 'menu' | 'playing' | 'won' | 'lost';
+  monthlyEvents: string[];
+  researchCommittedDoctors: number; // Doctors allocated to research investment
+  lastVaccineDelta: number; // Progress gained during the last month advancement
+  pendingMonthlyChoices: MonthlyChoiceOption[]; // Monthly choice options that persist until selected
+}
+
 const initialCountries: Country[] = [
-  { id: 'china', name: 'China', population: 1400, infectionLevel: 30, doctorsAssigned: 0, isHotspot: true, importance: 85, value: 75, x: 75, y: 45 }, // Moved up slightly
+  { id: 'china', name: 'China', population: 1400, infectionLevel: 30, doctorsAssigned: 0, isHotspot: true, importance: 85, value: 85, x: 75, y: 45 }, // Moved up slightly
   { id: 'usa', name: 'United States', population: 330, infectionLevel: 40, doctorsAssigned: 0, isHotspot: true, importance: 95, value: 90, x: 20, y: 40 },
-  { id: 'india', name: 'India', population: 1380, infectionLevel: 35, doctorsAssigned: 0, isHotspot: true, importance: 80, value: 70, x: 70, y: 50 },
-  { id: 'brazil', name: 'Brazil', population: 215, infectionLevel: 45, doctorsAssigned: 0, isHotspot: true, importance: 65, value: 55, x: 35, y: 70 },
+  { id: 'india', name: 'India', population: 1380, infectionLevel: 35, doctorsAssigned: 0, isHotspot: true, importance: 60, value: 60, x: 67, y: 52 },
+  { id: 'brazil', name: 'Brazil', population: 215, infectionLevel: 45, doctorsAssigned: 0, isHotspot: true, importance: 35, value: 55, x: 35, y: 70 },
   { id: 'italy', name: 'Italy', population: 60, infectionLevel: 50, doctorsAssigned: 0, isHotspot: true, importance: 60, value: 50, x: 50, y: 39 },
-  { id: 'germany', name: 'Germany', population: 83, infectionLevel: 25, doctorsAssigned: 0, isHotspot: false, importance: 75, value: 85, x: 49.5, y: 33 },
-  { id: 'france', name: 'France', population: 68, infectionLevel: 30, doctorsAssigned: 0, isHotspot: false, importance: 70, value: 80, x: 47, y: 37 },
-  { id: 'uk', name: 'United Kingdom', population: 67, infectionLevel: 33, doctorsAssigned: 0, isHotspot: false, importance: 73, value: 83, x: 46, y: 33 },
-  { id: 'australia', name: 'Australia', population: 26, infectionLevel: 20, doctorsAssigned: 0, isHotspot: false, importance: 60, value: 65, x: 80, y: 80 },
-  { id: 'nigeria', name: 'Nigeria', population: 200, infectionLevel: 40, doctorsAssigned: 0, isHotspot: true, importance: 70, value: 60, x: 48.5, y: 59 }, // New African country
-  { id: 'southafrica', name: 'South Africa', population: 60, infectionLevel: 35, doctorsAssigned: 0, isHotspot: true, importance: 65, value: 55, x: 54, y: 80 }, // New African country
-  { id: 'egypt', name: 'Egypt', population: 100, infectionLevel: 30, doctorsAssigned: 0, isHotspot: false, importance: 60, value: 50, x: 55, y: 50 }, // Moved up slightly
+  { id: 'germany', name: 'Germany', population: 83, infectionLevel: 25, doctorsAssigned: 0, isHotspot: false, importance: 45, value: 65, x: 49.5, y: 33 },
+  { id: 'france', name: 'France', population: 68, infectionLevel: 30, doctorsAssigned: 0, isHotspot: false, importance: 70, value: 50, x: 47, y: 37 },
+  { id: 'uk', name: 'United Kingdom', population: 67, infectionLevel: 33, doctorsAssigned: 0, isHotspot: false, importance: 73, value: 73, x: 46, y: 33 },
+  { id: 'australia', name: 'Australia', population: 26, infectionLevel: 20, doctorsAssigned: 0, isHotspot: false, importance: 30, value: 65, x: 80, y: 80 },
+  { id: 'nigeria', name: 'Nigeria', population: 200, infectionLevel: 40, doctorsAssigned: 0, isHotspot: true, importance: 10, value: 10, x: 48.5, y: 59 }, // New African country
+  { id: 'southafrica', name: 'South Africa', population: 60, infectionLevel: 35, doctorsAssigned: 0, isHotspot: true, importance: 25, value: 15, x: 54, y: 80 }, // New African country
+  { id: 'egypt', name: 'Egypt', population: 100, infectionLevel: 30, doctorsAssigned: 0, isHotspot: false, importance: 30, value: 50, x: 55, y: 50 }, // Moved up slightly
 ];
 
 const randomEvents = [
@@ -92,11 +88,43 @@ export const useGameState = () => {
     monthlyEvents: [],
     researchCommittedDoctors: 0,
     lastVaccineDelta: 0,
+    pendingMonthlyChoices: [],
   });
 
   const [countries, setCountries] = useState<Country[]>(initialCountries);
 
+  // Helper functions to reduce code duplication
+  const getTotalAssignedDoctors = useCallback(() => {
+    return countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+  }, [countries]);
+
+  const calculateExpectedAvailableDoctors = useCallback((totalDoctors: number, researchCommitted: number = 0) => {
+    const totalAssigned = getTotalAssignedDoctors();
+    return Math.max(0, totalDoctors - totalAssigned - researchCommitted);
+  }, [getTotalAssignedDoctors]);
+
+  const clampToPercentage = useCallback((value: number) => {
+    return Math.max(0, Math.min(100, value));
+  }, []);
+
+  // Generate monthly choice options
+  const generateMonthlyChoices = useCallback((): MonthlyChoiceOption[] => {
+    const options: MonthlyChoiceOption[] = [
+      { id: 'option1', text: 'Focus on Vaccine Research', effect: { type: 'researchBoost', value: 10 } },
+      { id: 'option2', text: 'Recruit More Doctors', effect: { type: 'addDoctors', value: 2 } },
+      { id: 'option3', text: 'Implement Strict Lockdowns', effect: { type: 'spreadDecrease', value: 5 } },
+      { id: 'option4', text: 'Relax Restrictions', effect: { type: 'spreadIncrease', value: 8 } },
+      { id: 'option5', text: 'Doctor Fatigue', effect: { type: 'loseDoctors', value: 1 } },
+    ];
+    const numOptions = Math.floor(Math.random() * 4) + 2; // 2 to 5 options
+    const shuffled = options.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, numOptions);
+  }, []);
+
   const startGame = useCallback(() => {
+    // Generate initial monthly choices for the first month
+    const initialChoices = generateMonthlyChoices();
+    
     setGameState({
       currentMonth: 1,
       currentYear: 2021,
@@ -108,17 +136,18 @@ export const useGameState = () => {
       monthlyEvents: ["Global pandemic declared - infection rates rising worldwide"],
       researchCommittedDoctors: 0,
       lastVaccineDelta: 0,
+      pendingMonthlyChoices: initialChoices,
     });
     
     // Randomize initial country importance and values slightly for each game
     const randomizedCountries = initialCountries.map(country => ({
       ...country,
-      importance: Math.max(0, Math.min(100, country.importance + (Math.random() * 10 - 5))),
-      value: Math.max(0, Math.min(100, country.value + (Math.random() * 10 - 5))),
+      importance: clampToPercentage(country.importance + (Math.random() * 10 - 5)),
+      value: clampToPercentage(country.value + (Math.random() * 10 - 5)),
     }));
     
     setCountries(randomizedCountries);
-  }, []);
+  }, [generateMonthlyChoices, clampToPercentage]);
 
   const allocateDoctor = useCallback((countryId: string) => {
     if (gameState.availableDoctors <= 0) {
@@ -201,29 +230,22 @@ export const useGameState = () => {
     }
 
     // Calculate infection spread and vaccine progress
-    const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+    const totalAssignedDoctors = getTotalAssignedDoctors();
     const hotspotCoverage = countries
       .filter(c => c.isHotspot)
       .reduce((sum, country) => sum + (country.doctorsAssigned > 0 ? 1 : 0), 0);
 
-    // Infection calculation - higher base rate for increased difficulty
-    let infectionChange = 15; // Significantly increased base spread rate (from 12 to 15)
-    infectionChange -= (totalAssignedDoctors * 0.3); // Further reduced doctor effectiveness (from 0.4 to 0.3)
-    infectionChange -= (hotspotCoverage * 1.0); // Further reduced hotspot coverage bonus (from 1.2 to 1.0)
-
     // Random event impact - more volatile
     const randomEvent = randomEvents[Math.floor(Math.random() * randomEvents.length)];
     const eventImpact = Math.random() * 15 - 5; // -5 to +10 (skewed toward negative outcomes, increased from 12 to 15)
-    infectionChange += eventImpact;
 
     // Additional difficulty based on time progression
     const monthsElapsed = (newYear - 2021) * 12 + newMonth - 1;
+    let timeDifficulty = 0;
     if (monthsElapsed > 12) {
       // After first year, infection becomes harder to control
-      infectionChange += (monthsElapsed / 10); // Gradually increasing difficulty (from /12 to /10)
+      timeDifficulty = (monthsElapsed / 10); // Gradually increasing difficulty (from /12 to /10)
     }
-
-    let newGlobalInfection = Math.max(0, Math.min(100, gameState.globalInfection + infectionChange));
 
     // Handle special events
     let doctorsLostThisMonth = 0;
@@ -233,11 +255,11 @@ export const useGameState = () => {
       doctorsLostThisMonth = Math.floor(Math.random() * 2) + 1; // Lose 1 or 2 doctors
       
       // Calculate total assigned doctors to ensure available doctors count is valid
-      const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+      const totalAssignedDoctors = getTotalAssignedDoctors();
       
       setGameState(prev => {
         const newTotalDoctors = Math.max(0, prev.totalDoctors - doctorsLostThisMonth);
-        const newAvailableDoctors = Math.max(0, newTotalDoctors - totalAssignedDoctors - (prev.researchCommittedDoctors || 0));
+        const newAvailableDoctors = calculateExpectedAvailableDoctors(newTotalDoctors, prev.researchCommittedDoctors || 0);
         
         return {
           ...prev,
@@ -271,66 +293,90 @@ export const useGameState = () => {
     }
     
     // Slower vaccine progress convergence (monotonic: never decrease)
-    const computedVaccineProgress = Math.max(0, Math.min(100, gameState.vaccineProgress + (baseVaccineProgress - gameState.vaccineProgress) * 0.08 + vaccineBoost)); // Reduced from 0.1 to 0.08
+    const computedVaccineProgress = clampToPercentage(gameState.vaccineProgress + (baseVaccineProgress - gameState.vaccineProgress) * 0.08 + vaccineBoost); // Reduced from 0.1 to 0.08
     let newVaccineProgress = Math.max(gameState.vaccineProgress, computedVaccineProgress);
     const vaccineDelta = Math.max(0, newVaccineProgress - gameState.vaccineProgress);
 
     // Update country infection levels with more dynamic changes
-    setCountries(prev => 
-      prev.map(country => {
-        // Reduced doctor effectiveness
-        const doctorEffect = country.doctorsAssigned * (country.isHotspot ? 2.0 : 1.0); // Reduced from 2.5/1.2 to 2.0/1.0
-        
-        // Infection spread now considers country importance more significantly
-        const importanceFactor = country.importance / 80; // Normalize importance with higher weight (from /100 to /80)
-        
-        // Country-specific infection volatility based on population and current infection
-        const volatility = (country.population / 400) * (country.infectionLevel / 40) * (Math.random() * 18 - 8); // Increased volatility
-        
-        const newInfectionLevel = Math.max(0, Math.min(100, 
-          country.infectionLevel + (infectionChange * 0.8 * importanceFactor) - doctorEffect + volatility
-        )); // Increased infection spread factor from 0.7 to 0.8
+    const updatedCountries = countries.map(country => {
+      // Calculate maximum doctors this country can support
+      const maxDoctors = Math.ceil(country.importance / 20); // 1-5 doctors based on importance
+      
+      // Calculate doctor effectiveness based on allocation vs max capacity
+      // If fully staffed (100% of max doctors), get maximum 50% infection reduction
+      const doctorAllocationRatio = country.doctorsAssigned / maxDoctors;
+      const maxInfectionReduction = 50; // Maximum 50% reduction when fully staffed
+      const doctorEffect = doctorAllocationRatio * maxInfectionReduction * (country.isHotspot ? 1.2 : 1.0);
+      
+      // Infection spread now considers country importance more significantly
+      const importanceFactor = country.importance / 80; // Normalize importance with higher weight (from /100 to /80)
+      
+      // Country-specific infection volatility based on population and current infection
+      const volatility = (country.population / 400) * (country.infectionLevel / 40) * (Math.random() * 18 - 8); // Increased volatility
+      
+      // Base infection spread with time difficulty and event impact
+      const baseInfectionSpread = 15 + timeDifficulty + eventImpact; // Base spread rate
+      
+      const newInfectionLevel = clampToPercentage(
+        country.infectionLevel + (baseInfectionSpread * 0.8 * importanceFactor) - doctorEffect + volatility
+      ); // Increased infection spread factor from 0.7 to 0.8
 
-        // More significant and dynamic value and importance shifts
-        // Countries with higher infection levels become more important (crisis response)
-        const infectionImpact = (country.infectionLevel / 100) * 7; // Up to +7 importance based on infection (increased from 5)
-        
-        // Time-based fluctuations - different countries peak in importance at different times
-        // More dramatic shifts with higher frequency
-        const timeFactor = Math.sin((monthsElapsed + country.population % 18) / 9 * Math.PI) * 6; // Changed from 24/12/4 to 18/9/6
-        
-        // Random fluctuation component - more volatile
-        const randomFluctuation = Math.random() * 8 - 4; // +/- 4 (increased from 6-3)
-        
-        // Economic value shifts based on infection level - countries with high infection see economic decline
-        const economicImpact = country.infectionLevel > 60 ? -3 : country.infectionLevel > 40 ? -1 : 1;
-        
-        const newValue = Math.max(0, Math.min(100, country.value + randomFluctuation + timeFactor + economicImpact));
-        const newImportance = Math.max(0, Math.min(100, 
-          country.importance + infectionImpact + timeFactor + randomFluctuation
-        ));
+      // More significant and dynamic value and importance shifts
+      // Countries with higher infection levels become more important (crisis response)
+      const infectionImpact = (country.infectionLevel / 100) * 7; // Up to +7 importance based on infection (increased from 5)
+      
+      // Time-based fluctuations - different countries peak in importance at different times
+      // More dramatic shifts with higher frequency
+      const timeFactor = Math.sin((monthsElapsed + country.population % 18) / 9 * Math.PI) * 6; // Changed from 24/12/4 to 18/9/6
+      
+      // Random fluctuation component - more volatile
+      const randomFluctuation = Math.random() * 8 - 4; // +/- 4 (increased from 6-3)
+      
+      // Economic value shifts based on infection level - countries with high infection see economic decline
+      const economicImpact = country.infectionLevel > 60 ? -3 : country.infectionLevel > 40 ? -1 : 1;
+      
+      const newValue = clampToPercentage(country.value + randomFluctuation + timeFactor + economicImpact);
+      const newImportance = clampToPercentage(
+        country.importance + infectionImpact + timeFactor + randomFluctuation
+      );
 
-        // Hotspot status can change based on infection level and importance
-        let newHotspotStatus = country.isHotspot;
-        
-        // 10% chance each month of hotspot status changing based on conditions
-        if (Math.random() < 0.1) {
-          if (country.infectionLevel > 60 && country.importance > 70) {
-            newHotspotStatus = true; // High infection + high importance = hotspot
-          } else if (country.infectionLevel < 20 && country.isHotspot) {
-            newHotspotStatus = false; // Low infection can resolve hotspot status
-          }
+      // Hotspot status can change based on infection level and importance
+      let newHotspotStatus = country.isHotspot;
+      
+      // 10% chance each month of hotspot status changing based on conditions
+      if (Math.random() < 0.1) {
+        if (country.infectionLevel > 60 && country.importance > 70) {
+          newHotspotStatus = true; // High infection + high importance = hotspot
+        } else if (country.infectionLevel < 20 && country.isHotspot) {
+          newHotspotStatus = false; // Low infection can resolve hotspot status
         }
+      }
 
-        return { 
-          ...country, 
-          infectionLevel: newInfectionLevel, 
-          value: newValue, 
-          importance: newImportance,
-          isHotspot: newHotspotStatus
-        };
-      })
-    );
+      return { 
+        ...country, 
+        infectionLevel: newInfectionLevel, 
+        value: newValue, 
+        importance: newImportance,
+        isHotspot: newHotspotStatus
+      };
+    });
+
+    // Update the countries state
+    setCountries(updatedCountries);
+
+    // Calculate global infection as weighted average of country infection levels
+    // Weight is based on strategic importance and economic value
+    let totalWeightedInfection = 0;
+    let totalWeight = 0;
+    
+    updatedCountries.forEach(country => {
+      // Weight combines strategic importance and economic value
+      const weight = (country.importance + country.value) / 2;
+      totalWeightedInfection += country.infectionLevel * weight;
+      totalWeight += weight;
+    });
+    
+     let newGlobalInfection = totalWeight > 0 ? totalWeightedInfection / totalWeight : 0;
 
     // Check lose condition only; win is handled at the start of next month when vaccine is complete
     let newGameStatus = gameState.gameStatus;
@@ -348,8 +394,7 @@ export const useGameState = () => {
           break;
         case 'addDoctors': {
           const newTotalDoctors = gameState.totalDoctors + monthlyChoiceEffect.value;
-          const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-          const expectedAvailable = Math.max(0, newTotalDoctors - totalAssignedDoctors - (gameState.researchCommittedDoctors || 0));
+          const expectedAvailable = calculateExpectedAvailableDoctors(newTotalDoctors, gameState.researchCommittedDoctors || 0);
           setGameState(prev => ({
             ...prev,
             totalDoctors: newTotalDoctors,
@@ -368,8 +413,7 @@ export const useGameState = () => {
           break;
         case 'loseDoctors': {
           const newTotalDoctorsLoss = Math.max(0, gameState.totalDoctors - monthlyChoiceEffect.value);
-          const totalAssignedDoctorsLoss = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-          const expectedAvailableLoss = Math.max(0, newTotalDoctorsLoss - totalAssignedDoctorsLoss - (gameState.researchCommittedDoctors || 0));
+          const expectedAvailableLoss = calculateExpectedAvailableDoctors(newTotalDoctorsLoss, gameState.researchCommittedDoctors || 0);
           setGameState(prev => ({
             ...prev,
             totalDoctors: newTotalDoctorsLoss,
@@ -393,6 +437,9 @@ export const useGameState = () => {
       eventMessages.push(choiceMessage);
     }
 
+    // Generate new monthly choices for the next month
+    const newMonthlyChoices = generateMonthlyChoices();
+
     setGameState(prev => ({
       ...prev,
       currentMonth: newMonth,
@@ -402,8 +449,9 @@ export const useGameState = () => {
       lastVaccineDelta: vaccineDelta,
       gameStatus: newGameStatus,
       monthlyEvents: eventMessages,
+      pendingMonthlyChoices: newMonthlyChoices,
     }));
-  }, [gameState, countries]);
+  }, [gameState, countries, generateMonthlyChoices, getTotalAssignedDoctors, calculateExpectedAvailableDoctors, clampToPercentage]);
 
   const resetGame = useCallback(() => {
     setGameState(prev => ({ ...prev, gameStatus: 'menu' }));
@@ -415,11 +463,10 @@ export const useGameState = () => {
         ...prev,
         vaccineProgress: Math.min(100, prev.vaccineProgress + value),
       }));
-    } else if (gameState.availableDoctors >= 2) {
+    } else if (gameState.availableDoctors >= 1) {
       setGameState(prev => {
-        const newResearchCommitted = (prev.researchCommittedDoctors || 0) + 2;
-        const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-        const expectedAvailable = Math.max(0, prev.totalDoctors - totalAssignedDoctors - newResearchCommitted);
+        const newResearchCommitted = (prev.researchCommittedDoctors || 0) + 1;
+        const expectedAvailable = calculateExpectedAvailableDoctors(prev.totalDoctors, newResearchCommitted);
         return ({
           ...prev,
           researchCommittedDoctors: newResearchCommitted,
@@ -427,13 +474,12 @@ export const useGameState = () => {
         });
       });
     }
-  }, [gameState.availableDoctors, countries]);
+  }, [gameState.availableDoctors, calculateExpectedAvailableDoctors]);
 
   const researchRecall = useCallback(() => {
     if ((gameState.researchCommittedDoctors || 0) > 0) {
       setGameState(prev => {
-        const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-        const newAvailableDoctors = Math.max(0, prev.totalDoctors - totalAssignedDoctors);
+        const newAvailableDoctors = calculateExpectedAvailableDoctors(prev.totalDoctors, 0);
         return ({
           ...prev,
           researchCommittedDoctors: 0,
@@ -441,13 +487,12 @@ export const useGameState = () => {
         });
       });
     }
-  }, [gameState.researchCommittedDoctors, countries]);
+  }, [gameState.researchCommittedDoctors, calculateExpectedAvailableDoctors]);
 
   const addDoctors = useCallback((num: number) => {
     setGameState(prev => {
       const newTotal = prev.totalDoctors + num;
-      const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-      const expectedAvailable = Math.max(0, newTotal - totalAssignedDoctors - (prev.researchCommittedDoctors || 0));
+      const expectedAvailable = calculateExpectedAvailableDoctors(newTotal, prev.researchCommittedDoctors || 0);
       return ({
         ...prev,
         availableDoctors: expectedAvailable,
@@ -455,13 +500,12 @@ export const useGameState = () => {
         monthlyEvents: [...prev.monthlyEvents, `Recruited ${num} new doctors.`]
       });
     });
-  }, [countries]);
+  }, [calculateExpectedAvailableDoctors]);
 
   const loseDoctors = useCallback((num: number) => {
     setGameState(prev => {
       const newTotal = Math.max(0, prev.totalDoctors - num);
-      const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-      const expectedAvailable = Math.max(0, newTotal - totalAssignedDoctors - (prev.researchCommittedDoctors || 0));
+      const expectedAvailable = calculateExpectedAvailableDoctors(newTotal, prev.researchCommittedDoctors || 0);
       return ({
         ...prev,
         availableDoctors: expectedAvailable,
@@ -469,7 +513,7 @@ export const useGameState = () => {
         monthlyEvents: [...prev.monthlyEvents, `${num} doctors lost due to unforeseen circumstances.`]
       });
     });
-  }, [countries]);
+  }, [calculateExpectedAvailableDoctors]);
 
   const increaseGlobalInfection = useCallback((value: number) => {
     setGameState(prev => ({
@@ -487,10 +531,16 @@ export const useGameState = () => {
     }));
   }, []);
 
+  const clearPendingMonthlyChoices = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      pendingMonthlyChoices: [],
+    }));
+  }, []);
+
   // Validation function to ensure doctor counts are consistent
   const validateDoctorCounts = useCallback(() => {
-    const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
-    const expectedAvailableDoctors = gameState.totalDoctors - totalAssignedDoctors - (gameState.researchCommittedDoctors || 0);
+    const expectedAvailableDoctors = calculateExpectedAvailableDoctors(gameState.totalDoctors, gameState.researchCommittedDoctors || 0);
     
     if (gameState.availableDoctors !== expectedAvailableDoctors) {
       console.warn(`Doctor count mismatch detected. Expected available: ${expectedAvailableDoctors}, actual: ${gameState.availableDoctors}`);
@@ -500,7 +550,7 @@ export const useGameState = () => {
         availableDoctors: Math.max(0, Math.min(expectedAvailableDoctors, prev.totalDoctors)),
       }));
     }
-  }, [countries, gameState.availableDoctors, gameState.totalDoctors, gameState.researchCommittedDoctors]);
+  }, [gameState.availableDoctors, gameState.totalDoctors, gameState.researchCommittedDoctors, calculateExpectedAvailableDoctors]);
 
   return {
     gameState,
@@ -517,5 +567,6 @@ export const useGameState = () => {
     loseDoctors,
     increaseGlobalInfection,
     decreaseGlobalInfection,
+    clearPendingMonthlyChoices,
   };
 };

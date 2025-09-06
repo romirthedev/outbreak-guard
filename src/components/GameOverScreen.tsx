@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { useSound } from "@/hooks/useSound";
+import { useEffect } from "react";
 
 interface GameOverScreenProps {
   isVictory: boolean;
@@ -19,10 +21,20 @@ export const GameOverScreen = ({
   onPlayAgain, 
   onReturnToMenu 
 }: GameOverScreenProps) => {
+  const { playSound } = useSound();
   const monthNames = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
+
+  // Play appropriate sound effect when component mounts
+  useEffect(() => {
+    if (isVictory) {
+      playSound('you-win', 3);
+    } else {
+      playSound('alarm', 3);
+    }
+  }, [isVictory, playSound]);
 
   return (
     <div className="min-h-screen bg-gradient-dark flex items-center justify-center relative overflow-hidden">

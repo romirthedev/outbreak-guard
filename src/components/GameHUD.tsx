@@ -11,7 +11,7 @@ export interface GameHUDProps {
   totalAssignedDoctors?: number;
   researchCommittedDoctors?: number;
   onAdvanceMonth: () => void;
-  onResearchInvestment: (value?: number) => void;
+  onResearchInvestment: () => void;
   onResearchRecall: () => void;
 }
 
@@ -125,7 +125,7 @@ export const GameHUD = ({
                  'Final approval'}
               </span>
               <span className="font-medium">
-                Allocated: <span className="text-foreground">{totalAssignedDoctors + researchCommittedDoctors}</span>
+                Allocated: <span className="text-foreground">{researchCommittedDoctors}</span>
               </span>
             </div>
           </div>
@@ -135,7 +135,7 @@ export const GameHUD = ({
         <div className="flex items-center space-x-4">
           <button
             onClick={onResearchInvestment}
-            disabled={availableDoctors < 2}
+            disabled={availableDoctors < 1}
             className="bg-accent hover:bg-accent/80 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
             title="Invest doctors in vaccine research. Returns diminish as research progresses and challenges become more complex."
           >

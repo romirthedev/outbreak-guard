@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useGameState, type MonthlyEffect } from '@/hooks/useGameState';
+import { useGameState, type MonthlyEffect, type MonthlyChoiceOption } from '@/hooks/useGameState';
 
 import { StartScreen } from '@/components/StartScreen';
 import { MonthlyChoiceModal } from '@/components/MonthlyChoiceModal';
@@ -11,9 +11,9 @@ import { Notification } from '@/components/Notification';
 
 export const HealthcareMeltdown = () => {
   const [showMonthlyChoice, setShowMonthlyChoice] = useState(false);
-  const [monthlyChoiceOptions, setMonthlyChoiceOptions] = useState<{ id: string; text: string; effect: MonthlyEffect }[]>([]);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+  const [isMonthlyUpdateHidden, setIsMonthlyUpdateHidden] = useState(false);
   const {
     gameState,
     countries,
@@ -29,6 +29,7 @@ export const HealthcareMeltdown = () => {
     loseDoctors,
     increaseGlobalInfection,
     decreaseGlobalInfection,
+    clearPendingMonthlyChoices,
   } = useGameState();
 
   const handleStartGame = () => {
@@ -45,22 +46,20 @@ export const HealthcareMeltdown = () => {
   };
 
   const handleAdvanceMonth = () => {
-    // Generate random options for the user
-    const options: { id: string; text: string; effect: MonthlyEffect }[] = [
-      { id: 'option1', text: 'Focus on Vaccine Research (Research Boost)', effect: { type: 'researchBoost', value: 10 } },
-      { id: 'option2', text: 'Recruit More Doctors (+2 Doctors)', effect: { type: 'addDoctors', value: 2 } },
-      { id: 'option3', text: 'Implement Strict Lockdowns (Spread Decrease)', effect: { type: 'spreadDecrease', value: 5 } },
-      { id: 'option4', text: 'Relax Restrictions (Spread Increase)', effect: { type: 'spreadIncrease', value: 8 } },
-      { id: 'option5', text: 'Doctor Fatigue (Lose 1 Doctor)', effect: { type: 'loseDoctors', value: 1 } },
-    ];
-    const numOptions = Math.floor(Math.random() * 4) + 2; // 2 to 5 options
-    const shuffled = options.sort(() => 0.5 - Math.random());
-    setMonthlyChoiceOptions(shuffled.slice(0, numOptions));
-    setShowMonthlyChoice(true);
+    // Show the modal with the pending choices from the game state
+    if (gameState.pendingMonthlyChoices.length > 0) {
+      setShowMonthlyChoice(true);
+    } else {
+      // If no pending choices, advance month without choices (shouldn't happen in normal gameplay)
+      advanceMonth();
+    }
   };
 
   const handleChoiceSelected = (effect: MonthlyEffect) => {
     setShowMonthlyChoice(false);
+    
+    // Clear the pending choices since a choice was made
+    clearPendingMonthlyChoices();
     
     // Pass the effect to advanceMonth to be applied as part of the month advancement
     advanceMonth(effect);
@@ -95,13 +94,13 @@ export const HealthcareMeltdown = () => {
   };
 
   const handleResearchInvestment = () => {
-    if (gameState.availableDoctors < 2) {
-      showNotification("Not enough doctors available for research investment. Need at least 2 doctors.", 'error');
+    if (gameState.availableDoctors < 1) {
+      showNotification("Not enough doctors available for research investment. Need at least 1 doctor.", 'error');
       return;
     }
 
     researchInvestment();
-    showNotification("2 doctors committed to research. Progress will be calculated next month.", 'success');
+    showNotification("1 doctor committed to research. Progress will be calculated next month.", 'success');
   };
 
   const handleRecallDoctor = (countryId: string) => {
@@ -131,6 +130,13 @@ export const HealthcareMeltdown = () => {
       validateDoctorCounts();
     }
   }, [gameState.gameStatus, validateDoctorCounts]);
+
+  // Show monthly update when new events are added
+  useEffect(() => {
+    if (gameState.monthlyEvents.length > 0) {
+      setIsMonthlyUpdateHidden(false);
+    }
+  }, [gameState.monthlyEvents]);
 
   // Show How to Play screen
   if (showHowToPlay) {
@@ -166,7 +172,7 @@ export const HealthcareMeltdown = () => {
   if (showMonthlyChoice) {
     return (
       <MonthlyChoiceModal
-        options={monthlyChoiceOptions}
+        options={gameState.pendingMonthlyChoices}
         onChoiceSelected={handleChoiceSelected}
         open={showMonthlyChoice}
         onClose={() => setShowMonthlyChoice(false)}
@@ -200,12 +206,23 @@ export const HealthcareMeltdown = () => {
         />
         
         {/* Monthly Events Display */}
-        {gameState.monthlyEvents.length > 0 && (
+        {gameState.monthlyEvents.length > 0 && !isMonthlyUpdateHidden && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-primary/30 rounded-lg p-4 max-w-md mx-auto">
-            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center">
-              <span className="text-primary-glow mr-2">📢</span>
-              Monthly Update
-            </h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-foreground flex items-center">
+                <span className="text-primary-glow mr-2">📢</span>
+                Monthly Update
+              </h4>
+              <button
+                onClick={() => setIsMonthlyUpdateHidden(true)}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+                title="Hide monthly update"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <div className="space-y-1">
               {gameState.monthlyEvents.map((event, index) => (
                 <p key={index} className="text-sm text-muted-foreground">
