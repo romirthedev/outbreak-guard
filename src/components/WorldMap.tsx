@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Country } from '@/hooks/useGameState';
 import { GeoBackdrop } from '@/components/GeoBackdrop';
 
@@ -11,6 +11,8 @@ interface WorldMapProps {
 
 export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availableDoctors }: WorldMapProps) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (selectedCountry) {
@@ -42,6 +44,49 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     return `${baseClass} ${sizeClass} ${pulseClass}`;
   };
 
+  // Size/animation modifiers without background to avoid square red boxes
+  const getDotModifiers = (level: number, importance: number) => {
+    const sizeClass = importance > 85 ? "scale-140" : 
+                     importance > 70 ? "scale-125" : 
+                     importance > 50 ? "scale-110" : 
+                     importance < 30 ? "scale-75" :
+                     importance < 50 ? "scale-90" : "";
+    const pulseClass = level > 75 ? "animate-pulse" : "";
+    return `${sizeClass} ${pulseClass}`.trim();
+  };
+
+  const getBgClass = (level: number) => {
+    if (level < 20) return "bg-secondary";
+    if (level < 40) return "bg-infection-low";
+    if (level < 65) return "bg-infection-medium";
+    return "bg-infection-critical";
+  };
+
+  const getBorderClass = (level: number) => {
+    if (level < 20) return "border-muted";
+    if (level < 40) return "border-infection-low";
+    if (level < 65) return "border-infection-medium";
+    return "border-infection-critical";
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  const isNear = (country: Country) => {
+    if (!mousePos || !containerRef.current) return false;
+    const rect = containerRef.current.getBoundingClientRect();
+    const cx = (country.x / 100) * rect.width;
+    const cy = (country.y / 100) * rect.height;
+    const dx = mousePos.x - cx;
+    const dy = mousePos.y - cy;
+    const dist = Math.hypot(dx, dy);
+    // Consider "near" within ~48px (slightly larger than the dot), tweakable
+    return dist < 48;
+  };
+
   const handleCountryClick = (country: Country) => {
     setSelectedCountry(country);
   };
@@ -71,7 +116,11 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
   }, [countries]);
 
   return (
-    <div className="relative w-full h-full bg-gradient-dark overflow-hidden">
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      className="relative w-full h-full bg-gradient-dark overflow-hidden"
+    >
       {/* Geographic backdrop with pan/zoom. Sits behind all gameplay UI. */}
       <GeoBackdrop
         className="absolute inset-0 z-0"
@@ -104,36 +153,45 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
 
       {/* Countries as interactive dots */}
       <div className="absolute inset-0 z-10 p-8 pointer-events-none">
-        {countries.map((country) => (
-          <div
-            key={country.id}
-            className={`absolute cursor-pointer transition-all duration-300 hover:scale-110 pointer-events-auto ${getInfectionIntensity(country.infectionLevel, country.importance)}`}
-            style={{
-              left: `${country.x}%`,
-              top: `${country.y}%`,
-              transform: 'translate(-50%, -50%)',
-              transition: 'all 0.5s ease-in-out',
-            }}
-            onClick={() => handleCountryClick(country)}
-          >
-            <div className="relative w-8 h-8 rounded-full border-2 flex items-center justify-center">
-              {/* Hotspot indicator */}
-              {country.isHotspot && (
-                <div className="absolute -inset-1 rounded-full border border-primary-glow animate-pulse" />
-              )}
-              
-              {/* Doctor icons */}
-              {country.doctorsAssigned > 0 && (
-                <div className="absolute -top-2 -right-2 bg-primary-glow text-background text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center doctor-icon">
-                  {country.doctorsAssigned}
-                </div>
-              )}
+        {countries.map((country) => {
+          const near = isNear(country);
+          return (
+            <div
+              key={country.id}
+              className={`group absolute cursor-pointer pointer-events-auto`}
+              style={{
+                left: `${country.x}%`,
+                top: `${country.y}%`,
+                transform: 'translate(-50%, -50%)',
+                transition: 'all 0.5s ease-in-out',
+              }}
+              onClick={() => handleCountryClick(country)}
+            >
+              <div
+                className={
+                  `relative rounded-full border-2 flex items-center justify-center transition-transform duration-300 ${getBorderClass(country.infectionLevel)} ${getDotModifiers(country.infectionLevel, country.importance)} ` +
+                  `${near ? 'scale-110 red-glow' : ''} group-hover:scale-110`
+                }
+                style={{ width: '1.25rem', height: '1.25rem' }}
+              >
+                {/* Hotspot indicator */}
+                {country.isHotspot && (
+                  <div className="absolute -inset-1 rounded-full border border-primary-glow animate-pulse" />
+                )}
+                
+                {/* Doctor icons */}
+                {country.doctorsAssigned > 0 && (
+                  <div className="absolute -top-2 -right-2 bg-primary-glow text-background text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center doctor-icon">
+                    {country.doctorsAssigned}
+                  </div>
+                )}
 
-              {/* Country indicator */}
-              <div className="w-3 h-3 rounded-full bg-current opacity-80" />
+                {/* Country indicator */}
+                <div className={`rounded-full opacity-90 ${getBgClass(country.infectionLevel)}`} style={{ width: '0.5rem', height: '0.5rem' }} />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Country Details Panel */}
