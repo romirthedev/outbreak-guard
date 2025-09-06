@@ -1,7 +1,23 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 
 export const useSound = () => {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const timeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+
+  // Cleanup function to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      timeoutsRef.current.clear();
+      
+      // Pause and cleanup all audio elements
+      Object.values(audioRefs.current).forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    };
+  }, []);
 
   const playSound = useCallback((soundName: string, duration?: number) => {
     try {
@@ -23,10 +39,12 @@ export const useSound = () => {
 
       // Stop after specified duration if provided
       if (duration) {
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           audio.pause();
           audio.currentTime = 0;
+          timeoutsRef.current.delete(timeout);
         }, duration * 1000);
+        timeoutsRef.current.add(timeout);
       }
     } catch (error) {
       console.warn(`Error playing sound ${soundName}:`, error);

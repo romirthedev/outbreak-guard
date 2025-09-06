@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 
 export type MonthlyEffect = {
   type: 'researchBoost' | 'addDoctors' | 'spreadDecrease' | 'spreadIncrease' | 'loseDoctors';
@@ -104,7 +104,18 @@ export const useGameState = () => {
   }, [getTotalAssignedDoctors]);
 
   const clampToPercentage = useCallback((value: number) => {
+    // Ensure the value is finite before clamping
+    if (!isFinite(value)) {
+      console.warn(`Invalid value detected in clampToPercentage: ${value}`);
+      return 0;
+    }
     return Math.max(0, Math.min(100, value));
+  }, []);
+
+  // Helper function to validate and sanitize numeric values
+  const sanitizeNumber = useCallback((value: unknown, fallback: number = 0) => {
+    const num = typeof value === 'number' ? value : parseFloat(String(value));
+    return isFinite(num) ? num : fallback;
   }, []);
 
   // Generate monthly choice options
@@ -212,118 +223,108 @@ export const useGameState = () => {
   }, [gameState.totalDoctors, gameState.researchCommittedDoctors]);
 
   const advanceMonth = useCallback((monthlyChoiceEffect?: MonthlyEffect) => {
-    const newMonth = gameState.currentMonth === 12 ? 1 : gameState.currentMonth + 1;
-    const newYear = gameState.currentMonth === 12 ? gameState.currentYear + 1 : gameState.currentYear;
+    setGameState(prev => {
+      const newMonth = prev.currentMonth === 12 ? 1 : prev.currentMonth + 1;
+      const newYear = prev.currentMonth === 12 ? prev.currentYear + 1 : prev.currentYear;
 
-    // Check if we've reached 2025 without a vaccine - player loses
-    if (newYear > 2025) {
-      setGameState(prev => ({
-        ...prev,
-        currentMonth: newMonth,
-        currentYear: newYear,
-        gameStatus: 'lost',
-        monthlyEvents: [
-          "Time's up! The 2025 deadline has passed without a vaccine. Humanity has failed."
-        ],
-      }));
-      return;
-    }
-
-    // If vaccine is already complete, trigger win on this next-month action
-    if (gameState.vaccineProgress >= 100) {
-      setGameState(prev => ({
-        ...prev,
-        currentMonth: newMonth,
-        currentYear: newYear,
-        gameStatus: 'won',
-        monthlyEvents: [
-          "Vaccine completed! The world recovers."
-        ],
-      }));
-      return;
-    }
-
-    // Calculate infection spread and vaccine progress
-    const totalAssignedDoctors = getTotalAssignedDoctors();
-    const hotspotCoverage = countries
-      .filter(c => c.isHotspot)
-      .reduce((sum, country) => sum + (country.doctorsAssigned > 0 ? 1 : 0), 0);
-
-    // Random event impact - more volatile
-    const randomEvent = randomEvents[Math.floor(Math.random() * randomEvents.length)];
-    const eventImpact = Math.random() * 15 - 5; // -5 to +10 (skewed toward negative outcomes, increased from 12 to 15)
-
-    // Additional difficulty based on time progression
-    const monthsElapsed = (newYear - 2021) * 12 + newMonth - 1;
-    let timeDifficulty = 0;
-    if (monthsElapsed > 12) {
-      // After first year, infection becomes harder to control
-      timeDifficulty = (monthsElapsed / 10); // Gradually increasing difficulty (from /12 to /10)
-    }
-
-    // Handle special events
-    let doctorsLostThisMonth = 0;
-    let vaccineSetback = false;
-    
-    if (randomEvent.includes("Doctor burnout")) {
-      doctorsLostThisMonth = Math.floor(Math.random() * 2) + 1; // Lose 1 or 2 doctors
-      
-      // Calculate total assigned doctors to ensure available doctors count is valid
-      const totalAssignedDoctors = getTotalAssignedDoctors();
-      
-      setGameState(prev => {
-        const newTotalDoctors = Math.max(0, prev.totalDoctors - doctorsLostThisMonth);
-        const newAvailableDoctors = calculateExpectedAvailableDoctors(newTotalDoctors, prev.researchCommittedDoctors || 0);
-        
+      // Check if we've reached 2025 without a vaccine - player loses
+      if (newYear > 2025) {
         return {
           ...prev,
-          totalDoctors: newTotalDoctors,
-          availableDoctors: newAvailableDoctors,
+          currentMonth: newMonth,
+          currentYear: newYear,
+          gameStatus: 'lost',
+          monthlyEvents: [
+            "Time's up! The 2025 deadline has passed without a vaccine. Humanity has failed."
+          ],
         };
-      });
-    }
-    
-    if (randomEvent.includes("Vaccine research setback")) {
-      vaccineSetback = true;
-    }
+      }
 
-    // Vaccine progress - slower progress for increased difficulty
-    // Now takes 84 months (7 years) instead of 72 months (6 years) to complete naturally
-    const baseVaccineProgress = (monthsElapsed / 84) * 100; 
-    
-    // Calculate vaccine boost from both research-committed doctors and field doctors
-    const researchBoost = (gameState.researchCommittedDoctors || 0) * 0.5; // Each research doctor contributes 0.5% per month
-    const fieldBoost = totalAssignedDoctors * 0.2; // Each field doctor contributes 0.2% per month
-    let vaccineBoost = researchBoost + fieldBoost;
-    
-    // Apply vaccine setback if the event occurred
-    if (vaccineSetback) {
-      vaccineBoost -= 7; // Significant setback (increased from 5 to 7)
-    }
-    
-    // If anti-vaccination event, further reduce progress
-    if (randomEvent.includes("Anti-vaccination")) {
-      vaccineBoost -= 4; // Increased from 3 to 4
-    }
-    
-    // Slower vaccine progress convergence (monotonic: never decrease)
-    const computedVaccineProgress = clampToPercentage(gameState.vaccineProgress + (baseVaccineProgress - gameState.vaccineProgress) * 0.08 + vaccineBoost); // Reduced from 0.1 to 0.08
-    let newVaccineProgress = Math.max(gameState.vaccineProgress, computedVaccineProgress);
-    const vaccineDelta = Math.max(0, newVaccineProgress - gameState.vaccineProgress);
+      // If vaccine is already complete, trigger win on this next-month action
+      if (prev.vaccineProgress >= 100) {
+        return {
+          ...prev,
+          currentMonth: newMonth,
+          currentYear: newYear,
+          gameStatus: 'won',
+          monthlyEvents: [
+            "Vaccine completed! The world recovers."
+          ],
+        };
+      }
 
-    // Update country infection levels with more dynamic changes
-    const updatedCountries = countries.map(country => {
+      // Calculate infection spread and vaccine progress
+      const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+      const hotspotCoverage = countries
+        .filter(c => c.isHotspot)
+        .reduce((sum, country) => sum + (country.doctorsAssigned > 0 ? 1 : 0), 0);
+
+      // Random event impact - more volatile
+      const randomEvent = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+      const eventImpact = Math.random() * 15 - 5; // -5 to +10 (skewed toward negative outcomes, increased from 12 to 15)
+
+      // Additional difficulty based on time progression
+      const monthsElapsed = (newYear - 2021) * 12 + newMonth - 1;
+      let timeDifficulty = 0;
+      if (monthsElapsed > 12) {
+        // After first year, infection becomes harder to control
+        timeDifficulty = (monthsElapsed / 10); // Gradually increasing difficulty (from /12 to /10)
+      }
+
+      // Handle special events
+      let doctorsLostThisMonth = 0;
+      let vaccineSetback = false;
+      
+      if (randomEvent.includes("Doctor burnout")) {
+        doctorsLostThisMonth = Math.floor(Math.random() * 2) + 1; // Lose 1 or 2 doctors
+      }
+      
+      if (randomEvent.includes("Vaccine research setback")) {
+        vaccineSetback = true;
+      }
+
+      // Vaccine progress - slower progress for increased difficulty
+      // Now takes 84 months (7 years) instead of 72 months (6 years) to complete naturally
+      const baseVaccineProgress = isFinite(monthsElapsed) ? (monthsElapsed / 84) * 100 : 0; 
+      
+      // Calculate vaccine boost from both research-committed doctors and field doctors
+      const researchBoost = isFinite(prev.researchCommittedDoctors) ? (prev.researchCommittedDoctors || 0) * 0.5 : 0; // Each research doctor contributes 0.5% per month
+      const fieldBoost = isFinite(totalAssignedDoctors) ? totalAssignedDoctors * 0.2 : 0; // Each field doctor contributes 0.2% per month
+      let vaccineBoost = isFinite(researchBoost + fieldBoost) ? researchBoost + fieldBoost : 0;
+      
+      // Apply vaccine setback if the event occurred
+      if (vaccineSetback) {
+        vaccineBoost -= 7; // Significant setback (increased from 5 to 7)
+      }
+      
+      // If anti-vaccination event, further reduce progress
+      if (randomEvent.includes("Anti-vaccination")) {
+        vaccineBoost -= 4; // Increased from 3 to 4
+      }
+      
+      // Validate vaccine progress calculation
+      const currentVaccineProgress = isFinite(prev.vaccineProgress) ? prev.vaccineProgress : 0;
+      const progressChange = isFinite(baseVaccineProgress - currentVaccineProgress) ? (baseVaccineProgress - currentVaccineProgress) * 0.08 : 0;
+      const boost = isFinite(vaccineBoost) ? vaccineBoost : 0;
+      
+      // Slower vaccine progress convergence (monotonic: never decrease)
+      const computedVaccineProgress = clampToPercentage(currentVaccineProgress + progressChange + boost);
+      let newVaccineProgress = Math.max(currentVaccineProgress, computedVaccineProgress);
+      const vaccineDelta = Math.max(0, newVaccineProgress - currentVaccineProgress);
+
+      // Update country infection levels with more dynamic changes
+      const updatedCountries = countries.map(country => {
       // Calculate maximum doctors this country can support
       const maxDoctors = Math.ceil(country.importance / 20); // 1-5 doctors based on importance
       
       // Calculate doctor effectiveness based on allocation vs max capacity
       // If fully staffed (100% of max doctors), get maximum 50% infection reduction
-      const doctorAllocationRatio = country.doctorsAssigned / maxDoctors;
+      const doctorAllocationRatio = Math.max(0, country.doctorsAssigned / Math.max(1, maxDoctors));
       const maxInfectionReduction = 50; // Maximum 50% reduction when fully staffed
       const doctorEffect = doctorAllocationRatio * maxInfectionReduction * (country.isHotspot ? 1.2 : 1.0);
       
       // Infection spread now considers country importance more significantly
-      const importanceFactor = country.importance / 80; // Normalize importance with higher weight (from /100 to /80)
+      const importanceFactor = Math.max(0.1, country.importance / 80); // Normalize importance with higher weight, ensure minimum
       
       // Country-specific infection volatility based on population and current infection
       const volatility = (country.population / 400) * (country.infectionLevel / 40) * (Math.random() * 18 - 8); // Increased volatility
@@ -331,13 +332,21 @@ export const useGameState = () => {
       // Base infection spread with time difficulty and event impact
       const baseInfectionSpread = 15 + timeDifficulty + eventImpact; // Base spread rate
       
-      const newInfectionLevel = clampToPercentage(
-        country.infectionLevel + (baseInfectionSpread * 0.8 * importanceFactor) - doctorEffect + volatility
-      ); // Increased infection spread factor from 0.7 to 0.8
+      // Ensure countries without doctors always have some infection increase
+      const baseInfectionChange = (baseInfectionSpread * 0.8 * importanceFactor) - doctorEffect + volatility;
+      const minimumIncrease = country.doctorsAssigned === 0 ? 2 : 0; // Minimum 2% increase if no doctors
+      
+      const infectionChange = Math.max(minimumIncrease, baseInfectionChange);
+      
+      // Validate all inputs before calculation
+      const currentLevel = sanitizeNumber(country.infectionLevel, 0);
+      const change = sanitizeNumber(infectionChange, minimumIncrease);
+      
+      const newInfectionLevel = clampToPercentage(currentLevel + change);
 
       // More significant and dynamic value and importance shifts
       // Countries with higher infection levels become more important (crisis response)
-      const infectionImpact = (country.infectionLevel / 100) * 7; // Up to +7 importance based on infection (increased from 5)
+      const infectionImpact = (newInfectionLevel / 100) * 7; // Up to +7 importance based on infection (increased from 5)
       
       // Time-based fluctuations - different countries peak in importance at different times
       // More dramatic shifts with higher frequency
@@ -347,12 +356,17 @@ export const useGameState = () => {
       const randomFluctuation = Math.random() * 8 - 4; // +/- 4 (increased from 6-3)
       
       // Economic value shifts based on infection level - countries with high infection see economic decline
-      const economicImpact = country.infectionLevel > 60 ? -3 : country.infectionLevel > 40 ? -1 : 1;
+      const economicImpact = newInfectionLevel > 60 ? -3 : newInfectionLevel > 40 ? -1 : 1;
       
-      const newValue = clampToPercentage(country.value + randomFluctuation + timeFactor + economicImpact);
-      const newImportance = clampToPercentage(
-        country.importance + infectionImpact + timeFactor + randomFluctuation
-      );
+      // Validate all calculations before applying
+      const currentValue = sanitizeNumber(country.value, 50);
+      const currentImportance = sanitizeNumber(country.importance, 50);
+      
+      const valueChange = sanitizeNumber(randomFluctuation + timeFactor + economicImpact, 0);
+      const importanceChange = sanitizeNumber(infectionImpact + timeFactor + randomFluctuation, 0);
+      
+      const newValue = clampToPercentage(currentValue + valueChange);
+      const newImportance = clampToPercentage(currentImportance + importanceChange);
 
       // Hotspot status can change based on infection level and importance
       let newHotspotStatus = country.isHotspot;
@@ -375,97 +389,121 @@ export const useGameState = () => {
       };
     });
 
-    // Update the countries state
-    setCountries(updatedCountries);
-
-    // Calculate global infection as weighted average of country infection levels
-    // Weight is based on strategic importance and economic value
-    let totalWeightedInfection = 0;
-    let totalWeight = 0;
-    
-    updatedCountries.forEach(country => {
-      // Weight combines strategic importance and economic value
-      const weight = (country.importance + country.value) / 2;
-      totalWeightedInfection += country.infectionLevel * weight;
-      totalWeight += weight;
-    });
-    
-     let newGlobalInfection = totalWeight > 0 ? totalWeightedInfection / totalWeight : 0;
-
-    // Check lose condition only; win is handled at the start of next month when vaccine is complete
-    let newGameStatus = gameState.gameStatus;
-    if (newGlobalInfection >= 90) { // Lower threshold for losing (from 95 to 90)
-      newGameStatus = 'lost';
-    }
-
-    // Apply monthly choice effects if provided
-    let choiceMessage = '';
-    if (monthlyChoiceEffect) {
-      switch (monthlyChoiceEffect.type) {
-        case 'researchBoost':
-          newVaccineProgress = Math.min(100, newVaccineProgress + monthlyChoiceEffect.value);
-          choiceMessage = `Strategic focus on research: +${monthlyChoiceEffect.value}% vaccine progress`;
-          break;
-        case 'addDoctors': {
-          const newTotalDoctors = gameState.totalDoctors + monthlyChoiceEffect.value;
-          const expectedAvailable = calculateExpectedAvailableDoctors(newTotalDoctors, gameState.researchCommittedDoctors || 0);
-          setGameState(prev => ({
-            ...prev,
-            totalDoctors: newTotalDoctors,
-            availableDoctors: expectedAvailable,
-          }));
-          choiceMessage = `Recruited ${monthlyChoiceEffect.value} new doctors`;
-          break;
+      // Calculate global infection as weighted average of country infection levels
+      // Weight is based on strategic importance and economic value with population consideration
+      let totalWeightedInfection = 0;
+      let totalWeight = 0;
+      
+      updatedCountries.forEach(country => {
+        // Sanitize all values
+        const importance = sanitizeNumber(country.importance, 50);
+        const value = sanitizeNumber(country.value, 50);
+        const infectionLevel = sanitizeNumber(country.infectionLevel, 0);
+        const population = sanitizeNumber(country.population, 100);
+        
+        // Weight combines strategic importance, economic value, and population
+        // More important countries and larger populations have more influence
+        const strategicWeight = (importance + value) / 2;
+        const populationWeight = Math.log10(population) / 3; // Logarithmic scaling for population
+        const weight = strategicWeight * (1 + populationWeight);
+        
+        // Ensure weight is valid and infection level is a number
+        if (isFinite(weight) && isFinite(infectionLevel) && weight > 0) {
+          totalWeightedInfection += infectionLevel * weight;
+          totalWeight += weight;
         }
-        case 'spreadDecrease':
-          newGlobalInfection = Math.max(0, newGlobalInfection - monthlyChoiceEffect.value);
-          choiceMessage = `Strict lockdowns implemented: -${monthlyChoiceEffect.value}% global infection`;
-          break;
-        case 'spreadIncrease':
-          newGlobalInfection = Math.min(100, newGlobalInfection + monthlyChoiceEffect.value);
-          choiceMessage = `Restrictions relaxed: +${monthlyChoiceEffect.value}% global infection`;
-          break;
-        case 'loseDoctors': {
-          const newTotalDoctorsLoss = Math.max(0, gameState.totalDoctors - monthlyChoiceEffect.value);
-          const expectedAvailableLoss = calculateExpectedAvailableDoctors(newTotalDoctorsLoss, gameState.researchCommittedDoctors || 0);
-          setGameState(prev => ({
-            ...prev,
-            totalDoctors: newTotalDoctorsLoss,
-            availableDoctors: expectedAvailableLoss,
-          }));
-          choiceMessage = `Doctor fatigue: Lost ${monthlyChoiceEffect.value} doctor(s)`;
-          break;
+      });
+      
+      // Calculate global infection with proper validation
+      let newGlobalInfection = 0;
+      if (totalWeight > 0 && isFinite(totalWeightedInfection)) {
+        newGlobalInfection = totalWeightedInfection / totalWeight;
+      } else {
+        // Fallback: simple average if weighted calculation fails
+        const validInfections = updatedCountries
+          .map(c => sanitizeNumber(c.infectionLevel, 0))
+          .filter(level => level > 0);
+        newGlobalInfection = validInfections.length > 0 
+          ? validInfections.reduce((sum, level) => sum + level, 0) / validInfections.length
+          : sanitizeNumber(prev.globalInfection, 20); // Keep current value if all calculations fail
+      }
+      
+      // Ensure global infection is within valid range
+      newGlobalInfection = clampToPercentage(newGlobalInfection);
+
+      // Check lose condition only; win is handled at the start of next month when vaccine is complete
+      let newGameStatus = prev.gameStatus;
+      if (newGlobalInfection >= 90) { // Lower threshold for losing (from 95 to 90)
+        newGameStatus = 'lost';
+      }
+
+      // Apply monthly choice effects if provided
+      let choiceMessage = '';
+      let newTotalDoctors = prev.totalDoctors;
+      let newAvailableDoctors = prev.availableDoctors;
+      
+      if (monthlyChoiceEffect && isFinite(monthlyChoiceEffect.value)) {
+        switch (monthlyChoiceEffect.type) {
+          case 'researchBoost':
+            newVaccineProgress = Math.min(100, newVaccineProgress + monthlyChoiceEffect.value);
+            choiceMessage = `Strategic focus on research: +${monthlyChoiceEffect.value}% vaccine progress`;
+            break;
+          case 'addDoctors': {
+            newTotalDoctors = prev.totalDoctors + monthlyChoiceEffect.value;
+            newAvailableDoctors = calculateExpectedAvailableDoctors(newTotalDoctors, prev.researchCommittedDoctors || 0);
+            choiceMessage = `Recruited ${monthlyChoiceEffect.value} new doctors`;
+            break;
+          }
+          case 'spreadDecrease':
+            newGlobalInfection = Math.max(0, newGlobalInfection - monthlyChoiceEffect.value);
+            choiceMessage = `Strict lockdowns implemented: -${monthlyChoiceEffect.value}% global infection`;
+            break;
+          case 'spreadIncrease':
+            newGlobalInfection = Math.min(100, newGlobalInfection + monthlyChoiceEffect.value);
+            choiceMessage = `Restrictions relaxed: +${monthlyChoiceEffect.value}% global infection`;
+            break;
+          case 'loseDoctors': {
+            newTotalDoctors = Math.max(0, prev.totalDoctors - monthlyChoiceEffect.value);
+            newAvailableDoctors = calculateExpectedAvailableDoctors(newTotalDoctors, prev.researchCommittedDoctors || 0);
+            choiceMessage = `Doctor fatigue: Lost ${monthlyChoiceEffect.value} doctor(s)`;
+            break;
+          }
         }
       }
-    }
 
-    // Generate event message
-    const eventMessages = [randomEvent];
-    if (doctorsLostThisMonth > 0) {
-      eventMessages.push(`Doctor burnout: Lost ${doctorsLostThisMonth} doctor(s).`);
-    }
-    if (vaccineSetback) {
-      eventMessages.push("Vaccine research faced significant setbacks.");
-    }
-    if (choiceMessage) {
-      eventMessages.push(choiceMessage);
-    }
+      // Generate event message
+      const eventMessages = [randomEvent];
+      if (doctorsLostThisMonth > 0) {
+        eventMessages.push(`Doctor burnout: Lost ${doctorsLostThisMonth} doctor(s).`);
+      }
+      if (vaccineSetback) {
+        eventMessages.push("Vaccine research faced significant setbacks.");
+      }
+      if (choiceMessage) {
+        eventMessages.push(choiceMessage);
+      }
 
-    // Generate new monthly choices for the next month
-    const newMonthlyChoices = generateMonthlyChoices();
+      // Generate new monthly choices for the next month
+      const newMonthlyChoices = generateMonthlyChoices();
 
-    setGameState(prev => ({
-      ...prev,
-      currentMonth: newMonth,
-      currentYear: newYear,
-      globalInfection: newGlobalInfection,
-      vaccineProgress: newVaccineProgress,
-      lastVaccineDelta: vaccineDelta,
-      gameStatus: newGameStatus,
-      monthlyEvents: eventMessages,
-      pendingMonthlyChoices: newMonthlyChoices,
-    }));
-  }, [gameState, countries, generateMonthlyChoices, getTotalAssignedDoctors, calculateExpectedAvailableDoctors, clampToPercentage]);
+      // Update both countries and game state atomically
+      setCountries(updatedCountries);
+      
+      return {
+        ...prev,
+        currentMonth: newMonth,
+        currentYear: newYear,
+        globalInfection: newGlobalInfection,
+        vaccineProgress: newVaccineProgress,
+        lastVaccineDelta: vaccineDelta,
+        gameStatus: newGameStatus,
+        monthlyEvents: eventMessages,
+        pendingMonthlyChoices: newMonthlyChoices,
+        totalDoctors: newTotalDoctors,
+        availableDoctors: newAvailableDoctors,
+      };
+    });
+  }, [countries, generateMonthlyChoices, calculateExpectedAvailableDoctors, clampToPercentage, sanitizeNumber]);
 
   const resetGame = useCallback(() => {
     setGameState(prev => ({ ...prev, gameStatus: 'menu' }));

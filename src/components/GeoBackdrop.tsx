@@ -23,6 +23,13 @@ export const GeoBackdrop = ({ className, backgroundColor = 'transparent' }: GeoB
     let isCancelled = false;
     let resizeObserver: ResizeObserver | null = null;
 
+    // Ensure the SVG resizes to fill container changes
+    const updateSize = () => {
+      if (mapInstanceRef.current && typeof mapInstanceRef.current.updateSize === 'function') {
+        try { mapInstanceRef.current.updateSize(); } catch {}
+      }
+    };
+
     const load = async () => {
       // Lazy-load library first, then the map definition.
       // Loading in parallel can cause "jsVectorMap is not defined" inside the map file.
@@ -62,13 +69,6 @@ export const GeoBackdrop = ({ className, backgroundColor = 'transparent' }: GeoB
         markerStyle: undefined,
       });
 
-      // Ensure the SVG resizes to fill container changes
-      const updateSize = () => {
-        if (mapInstanceRef.current && typeof mapInstanceRef.current.updateSize === 'function') {
-          try { mapInstanceRef.current.updateSize(); } catch {}
-        }
-      };
-
       // Call once after mount in case container was not fully laid out
       requestAnimationFrame(updateSize);
 
@@ -90,9 +90,8 @@ export const GeoBackdrop = ({ className, backgroundColor = 'transparent' }: GeoB
         try { resizeObserver.unobserve(containerRef.current); } catch {}
       }
       resizeObserver = null;
-      // Remove fallback listener
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      try { window.removeEventListener('resize', () => {}); } catch {}
+      // Remove fallback listener properly
+      try { window.removeEventListener('resize', updateSize); } catch {}
       if (mapInstanceRef.current) {
         try { mapInstanceRef.current.destroy(); } catch {}
         mapInstanceRef.current = null;

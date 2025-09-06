@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Country } from '@/hooks/useGameState';
 import { GeoBackdrop } from '@/components/GeoBackdrop';
 
@@ -23,7 +23,7 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     }
   }, [countries, selectedCountry]);
 
-  const getInfectionIntensity = (level: number, importance: number) => {
+  const getInfectionIntensity = useCallback((level: number, importance: number) => {
     // Base infection color based on level
     let baseClass = "";
     if (level < 20) baseClass = "bg-secondary border-muted";
@@ -42,36 +42,36 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     const pulseClass = level > 75 ? "animate-pulse" : "";
     
     return `${baseClass} ${sizeClass} ${pulseClass}`;
-  };
+  }, []);
 
   // Size/animation modifiers without background to avoid square red boxes
-  const getDotModifiers = (level: number, importance: number) => {
+  const getDotModifiers = useCallback((level: number, importance: number) => {
     const pulseClass = level > 75 ? "animate-pulse" : "";
     return `${pulseClass}`.trim();
-  };
+  }, []);
 
   // Importance-based size applied on the outer wrapper so hover/near on inner always scales up
-  const getImportanceScaleClass = (importance: number) => {
+  const getImportanceScaleClass = useCallback((importance: number) => {
     return importance > 85 ? "scale-140" :
            importance > 70 ? "scale-125" :
            importance > 50 ? "scale-110" :
            importance < 30 ? "scale-75" :
            importance < 50 ? "scale-90" : "";
-  };
+  }, []);
 
-  const getBgClass = (level: number) => {
+  const getBgClass = useCallback((level: number) => {
     if (level < 20) return "bg-secondary";
     if (level < 40) return "bg-infection-low";
     if (level < 65) return "bg-infection-medium";
     return "bg-infection-critical";
-  };
+  }, []);
 
-  const getBorderClass = (level: number) => {
+  const getBorderClass = useCallback((level: number) => {
     if (level < 20) return "border-muted";
     if (level < 40) return "border-infection-low";
     if (level < 65) return "border-infection-medium";
     return "border-infection-critical";
-  };
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -79,7 +79,7 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
 
-  const isNear = (country: Country) => {
+  const isNear = useCallback((country: Country) => {
     if (!mousePos || !containerRef.current) return false;
     const rect = containerRef.current.getBoundingClientRect();
     const cx = (country.x / 100) * rect.width;
@@ -89,7 +89,7 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     const dist = Math.hypot(dx, dy);
     // Consider "near" within ~48px (slightly larger than the dot), tweakable
     return dist < 48;
-  };
+  }, [mousePos]);
 
   const handleCountryClick = (country: Country) => {
     setSelectedCountry(country);
