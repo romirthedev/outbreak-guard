@@ -22,7 +22,7 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
             How to Play
           </h1>
           <p className="text-lg text-muted-foreground">
-            Master the art of pandemic management
+            Master the Art of Pandemic Management
           </p>
         </div>
 
