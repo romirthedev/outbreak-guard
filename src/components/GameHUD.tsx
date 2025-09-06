@@ -59,7 +59,7 @@ export const GameHUD = ({
           <div className="flex items-center space-x-2">
             <span className="text-primary-glow text-lg">⚕️</span>
             <div>
-              <div className="text-sm text-muted-foreground">Doctors (Avail/Total)</div>
+              <div className="text-sm text-muted-foreground">Doctors</div>
               <div className="text-xl font-bold text-foreground">{availableDoctors}/{totalDoctors}</div>
             </div>
           </div>
