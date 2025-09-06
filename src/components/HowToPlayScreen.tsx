@@ -94,7 +94,7 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
               <li className="flex items-start space-x-2">
                 <span className="text-infection-high mt-1">•</span>
                 <div>
-                  <strong className="text-foreground">Balance Resources:</strong> Don't put all your doctors in one place
+                  <strong className="text-foreground">Balance Resources:</strong> Don't put all your doctors in just one place
                 </div>
               </li>
             </ul>
