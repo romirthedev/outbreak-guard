@@ -187,7 +187,7 @@ export const useGameState = () => {
       return {
         ...prev,
         availableDoctors: prev.availableDoctors - 2,
-        totalDoctors: prev.totalDoctors - 2, // Permanently sacrifice doctors
+
         vaccineProgress: Math.min(100, prev.vaccineProgress + 10), // Boost vaccine progress
         monthlyEvents: [...prev.monthlyEvents, "Research Investment: Vaccine research boosted!"]
       };

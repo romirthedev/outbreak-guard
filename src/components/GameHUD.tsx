@@ -100,7 +100,7 @@ export const GameHUD = ({
         <div className="flex items-center space-x-4">
           <button
             onClick={onResearchInvestment}
-            disabled={availableDoctors < 2 || (currentYear === 2021 && currentMonth < 7)}
+            disabled={availableDoctors < 2}
             className="bg-accent hover:bg-accent/80 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
           >
             Research Investment (-2 Docs) 
