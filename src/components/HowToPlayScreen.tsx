@@ -6,8 +6,14 @@ interface HowToPlayScreenProps {
 
 export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
   return (
-    <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4 overflow-hidden">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-dark flex items-stretch p-4 overflow-hidden">
+      <div className="relative max-w-4xl mx-auto w-full space-y-8 overflow-y-auto overscroll-contain pr-2">
+        {/* Back to Home */}
+        <div className="sticky top-0 z-10 -mx-2 px-2 pt-1 pb-3 bg-gradient-to-b from-background/80 to-transparent backdrop-blur-sm">
+          <Button variant="meltdown" size="sm" onClick={onBack}>
+            ← Back to Home
+          </Button>
+        </div>
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-glow mb-4">
             How to Play
@@ -165,7 +171,7 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
           </div>
         </div>
 
-        <div className="text-center">
+        <div className="text-center pb-4">
           <Button 
             variant="hero" 
             size="xl" 
