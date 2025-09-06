@@ -13,6 +13,7 @@ export const HealthcareMeltdown = () => {
   const [showMonthlyChoice, setShowMonthlyChoice] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+  const [isMonthlyUpdateHidden, setIsMonthlyUpdateHidden] = useState(false);
   const {
     gameState,
     countries,
@@ -130,6 +131,13 @@ export const HealthcareMeltdown = () => {
     }
   }, [gameState.gameStatus, validateDoctorCounts]);
 
+  // Show monthly update when new events are added
+  useEffect(() => {
+    if (gameState.monthlyEvents.length > 0) {
+      setIsMonthlyUpdateHidden(false);
+    }
+  }, [gameState.monthlyEvents]);
+
   // Show How to Play screen
   if (showHowToPlay) {
     return <HowToPlayScreen onBack={handleBackFromHowToPlay} />;
@@ -198,12 +206,23 @@ export const HealthcareMeltdown = () => {
         />
         
         {/* Monthly Events Display */}
-        {gameState.monthlyEvents.length > 0 && (
+        {gameState.monthlyEvents.length > 0 && !isMonthlyUpdateHidden && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-primary/30 rounded-lg p-4 max-w-md mx-auto">
-            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center">
-              <span className="text-primary-glow mr-2">📢</span>
-              Monthly Update
-            </h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-foreground flex items-center">
+                <span className="text-primary-glow mr-2">📢</span>
+                Monthly Update
+              </h4>
+              <button
+                onClick={() => setIsMonthlyUpdateHidden(true)}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+                title="Hide monthly update"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <div className="space-y-1">
               {gameState.monthlyEvents.map((event, index) => (
                 <p key={index} className="text-sm text-muted-foreground">
