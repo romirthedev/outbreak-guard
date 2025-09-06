@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { useGameState } from '@/hooks/useGameState';
+
 import { StartScreen } from '@/components/StartScreen';
+import { MonthlyChoiceModal } from '@/components/MonthlyChoiceModal';
 import { GameHUD } from '@/components/GameHUD';
 import { WorldMap } from '@/components/WorldMap';
 import { GameOverScreen } from '@/components/GameOverScreen';
 import { HowToPlayScreen } from '@/components/HowToPlayScreen';
 
+
+
+
+
 export const HealthcareMeltdown = () => {
+  const [showMonthlyChoice, setShowMonthlyChoice] = useState(false);
+  const [monthlyChoiceOptions, setMonthlyChoiceOptions] = useState<any[]>([]);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const {
     gameState,
@@ -17,6 +25,10 @@ export const HealthcareMeltdown = () => {
     advanceMonth,
     resetGame,
     researchInvestment,
+    addDoctors,
+    loseDoctors,
+    increaseGlobalInfection,
+    decreaseGlobalInfection,
   } = useGameState();
 
   const handleStartGame = () => {
@@ -30,6 +42,46 @@ export const HealthcareMeltdown = () => {
 
   const handleBackFromHowToPlay = () => {
     setShowHowToPlay(false);
+  };
+
+  const handleAdvanceMonth = () => {
+    // Generate random options for the user
+    const options = [
+      { id: 'option1', text: 'Focus on Vaccine Research (Research Boost)', effect: { type: 'researchBoost', value: 10 } },
+      { id: 'option2', text: 'Recruit More Doctors (+2 Doctors)', effect: { type: 'addDoctors', value: 2 } },
+      { id: 'option3', text: 'Implement Strict Lockdowns (Spread Decrease)', effect: { type: 'spreadDecrease', value: 5 } },
+      { id: 'option4', text: 'Relax Restrictions (Spread Increase)', effect: { type: 'spreadIncrease', value: 8 } },
+      { id: 'option5', text: 'Doctor Fatigue (Lose 1 Doctor)', effect: { type: 'loseDoctors', value: 1 } },
+    ];
+    const numOptions = Math.floor(Math.random() * 4) + 2; // 2 to 5 options
+    const shuffled = options.sort(() => 0.5 - Math.random());
+    setMonthlyChoiceOptions(shuffled.slice(0, numOptions));
+    setShowMonthlyChoice(true);
+  };
+
+  const handleChoiceSelected = (effect: any) => {
+    setShowMonthlyChoice(false);
+    // Apply the effect based on the choice
+    switch (effect.type) {
+      case 'researchBoost':
+        researchInvestment(effect.value); // Assuming researchInvestment can take a value
+        break;
+      case 'addDoctors':
+        addDoctors(effect.value);
+        break;
+      case 'spreadDecrease':
+        decreaseGlobalInfection(effect.value);
+        break;
+      case 'spreadIncrease':
+        increaseGlobalInfection(effect.value);
+        break;
+      case 'loseDoctors':
+        loseDoctors(effect.value);
+        break;
+      default:
+        break;
+    }
+    advanceMonth(); // Then advance the month as usual
   };
 
   const handleReturnToMenu = () => {
@@ -67,6 +119,16 @@ export const HealthcareMeltdown = () => {
     );
   }
 
+  // Show monthly choice modal
+  if (showMonthlyChoice) {
+    return (
+      <MonthlyChoiceModal
+        options={monthlyChoiceOptions}
+        onChoiceSelected={handleChoiceSelected}
+      />
+    );
+  }
+
   // Show main game screen
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -77,7 +139,7 @@ export const HealthcareMeltdown = () => {
         currentYear={gameState.currentYear}
         globalInfection={gameState.globalInfection}
         vaccineProgress={gameState.vaccineProgress}
-        onAdvanceMonth={advanceMonth}
+        onAdvanceMonth={handleAdvanceMonth} // Use the new handler
         onResearchInvestment={researchInvestment}
       />
       
