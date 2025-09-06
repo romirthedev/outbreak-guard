@@ -344,7 +344,7 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
         <h4 className="text-sm font-semibold text-foreground mb-2">Instructions</h4>
         <ul className="text-xs text-muted-foreground space-y-1">
           <li>• Click on countries to allocate doctors</li>
-          <li>• Focus on hotspot regions (🔥) for maximum impact</li>
+          <li>• Focus on hotspot regions for maximum impact</li>
           <li>• Monitor infection spread and vaccine progress</li>
           <li>• Advance time to see results of your strategy</li>
         </ul>
