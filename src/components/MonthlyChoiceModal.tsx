@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useSound } from '@/hooks/useSound';
 import type { MonthlyChoiceOption, MonthlyEffect } from '@/hooks/useGameState';
 
 interface MonthlyChoiceModalProps {
@@ -16,6 +17,15 @@ export const MonthlyChoiceModal: React.FC<MonthlyChoiceModalProps> = ({
   open,
   onClose,
 }) => {
+  const { playSound } = useSound();
+
+  const handleChoiceClick = (effect: MonthlyEffect) => {
+    // Play time-passing sound for 2 seconds
+    playSound('time-passing', 2);
+    // Call the original handler
+    onChoiceSelected(effect);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -29,7 +39,7 @@ export const MonthlyChoiceModal: React.FC<MonthlyChoiceModalProps> = ({
           {options.map((option) => (
             <Button
               key={option.id}
-              onClick={() => onChoiceSelected(option.effect)}
+              onClick={() => handleChoiceClick(option.effect)}
               className="w-full"
             >
               {option.text}
