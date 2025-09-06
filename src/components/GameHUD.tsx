@@ -1,6 +1,5 @@
 import React from 'react';
 
-// GameHUD component props interface
 export interface GameHUDProps {
   availableDoctors: number;
   totalDoctors: number;
@@ -8,11 +7,8 @@ export interface GameHUDProps {
   currentYear: number;
   globalInfection: number;
   vaccineProgress: number;
-  totalAssignedDoctors?: number;
-  researchCommittedDoctors?: number;
   onAdvanceMonth: () => void;
-  onResearchInvestment: (value?: number) => void;
-  onResearchRecall: () => void;
+  onResearchInvestment: () => void;
 }
 
 const monthNames = [
@@ -27,11 +23,8 @@ export const GameHUD = ({
   currentYear,
   globalInfection,
   vaccineProgress,
-  totalAssignedDoctors = 0,
-  researchCommittedDoctors = 0,
   onAdvanceMonth,
   onResearchInvestment,
-  onResearchRecall,
 }: GameHUDProps) => {
   const getInfectionColor = (level: number) => {
     if (level < 15) return "bg-health-good"; // Reduced threshold from 20 to 15
@@ -50,6 +43,19 @@ export const GameHUD = ({
   
 
 
+  // Calculate estimated time to vaccine completion with more pessimistic estimate
+  const getVaccineEstimate = (progress: number, currentYear: number, currentMonth: number) => {
+    if (progress >= 100) return "Complete";
+    if (progress <= 0) return "Unknown";
+    
+    // More pessimistic estimate based on current progress and assuming slower progression
+    // Add 15% more time to reflect increased difficulty
+    const monthsRemaining = Math.ceil((100 - progress) / (progress / ((currentYear - 2021) * 12 + currentMonth)) * 1.15);
+    const targetMonth = ((currentMonth - 1 + monthsRemaining) % 12) + 1;
+    const targetYear = currentYear + Math.floor((currentMonth - 1 + monthsRemaining) / 12);
+    
+    return `Est. ${monthNames[targetMonth - 1]} ${targetYear}`;
+  };
 
   return (
     <div className="bg-card/90 backdrop-blur-sm border-b border-primary/20 px-6 py-4">
@@ -125,7 +131,7 @@ export const GameHUD = ({
                  'Final approval'}
               </span>
               <span className="font-medium">
-                Allocated: <span className="text-foreground">{totalAssignedDoctors + researchCommittedDoctors}</span>
+                {getVaccineEstimate(vaccineProgress, currentYear, currentMonth)}
               </span>
             </div>
           </div>
@@ -139,15 +145,7 @@ export const GameHUD = ({
             className="bg-accent hover:bg-accent/80 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
             title="Invest doctors in vaccine research. Returns diminish as research progresses and challenges become more complex."
           >
-            Research Investment
-          </button>
-          <button
-            onClick={onResearchRecall}
-            disabled={researchCommittedDoctors === 0}
-            className="bg-orange-600 hover:bg-orange-700 disabled:bg-muted disabled:text-muted-foreground text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
-            title="Recall all doctors from research and return them to the available pool."
-          >
-            Research Recall
+            Research Investment (-2 Docs) 
           </button>
           <button
             onClick={onAdvanceMonth}
