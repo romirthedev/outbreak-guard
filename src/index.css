@@ -194,6 +194,15 @@
   
   .text-primary-glow { color: hsl(var(--primary-glow)); }
   .bg-primary-glow { background-color: hsl(var(--primary-glow)); }
+
+  /* Hide native scrollbars while keeping scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
 }
 
 /* Keyframes for game animations */

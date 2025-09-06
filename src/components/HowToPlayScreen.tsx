@@ -6,14 +6,17 @@ interface HowToPlayScreenProps {
 
 export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
   return (
-    <div className="min-h-screen bg-gradient-dark flex items-stretch p-4 overflow-hidden">
-      <div className="relative max-w-4xl mx-auto w-full space-y-8 overflow-y-auto overscroll-contain pr-2">
-        {/* Back to Home */}
-        <div className="sticky top-0 z-10 -mx-2 px-2 pt-1 pb-3 bg-gradient-to-b from-background/80 to-transparent backdrop-blur-sm">
-          <Button variant="meltdown" size="sm" onClick={onBack}>
-            ← Back to Home
-          </Button>
+    <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4">
+      <div className="relative w-full max-w-4xl">
+        {/* Header above panel */}
+        <div className="mb-3 flex items-center justify-start">
+          <Button variant="meltdown" size="sm" onClick={onBack}>← Back to Home</Button>
         </div>
+
+        {/* Centered panel */}
+        <div className="bg-card/80 backdrop-blur-sm border border-primary/30 rounded-xl shadow-lg">
+          {/* Scrollable content area */}
+          <div className="max-h-[70vh] overflow-y-auto scrollbar-hide p-6 md:p-8 space-y-8">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-glow mb-4">
             How to Play
@@ -171,15 +174,17 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
           </div>
         </div>
 
-        <div className="text-center pb-4">
-          <Button 
-            variant="hero" 
-            size="xl" 
-            onClick={onBack}
-            className="w-64"
-          >
-            Start Playing
-          </Button>
+            <div className="text-center pt-2">
+              <Button 
+                variant="hero" 
+                size="xl" 
+                onClick={onBack}
+                className="w-64"
+              >
+                Start Playing
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
