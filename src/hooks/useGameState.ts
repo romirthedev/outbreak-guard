@@ -16,7 +16,6 @@ export interface GameState {
   currentYear: number;
   availableDoctors: number;
   totalDoctors: number;
-  globalInfection: number; // 0-100
   vaccineProgress: number; // 0-100
   gameStatus: 'menu' | 'playing' | 'won' | 'lost';
   monthlyEvents: string[];
