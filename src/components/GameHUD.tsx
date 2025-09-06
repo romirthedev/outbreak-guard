@@ -27,16 +27,32 @@ export const GameHUD = ({
   onResearchInvestment,
 }: GameHUDProps) => {
   const getInfectionColor = (level: number) => {
-    if (level < 25) return "bg-health-good";
-    if (level < 50) return "bg-health-warning";
-    if (level < 75) return "bg-infection-medium";
+    if (level < 15) return "bg-health-good"; // Reduced threshold from 20 to 15
+    if (level < 35) return "bg-health-warning"; // Reduced threshold from 40 to 35
+    if (level < 55) return "bg-infection-medium"; // Reduced threshold from 60 to 55
+    if (level < 75) return "bg-infection-high"; // Reduced threshold from 80 to 75
     return "bg-infection-critical";
   };
 
   const getVaccineColor = (progress: number) => {
-    if (progress < 33) return "bg-muted";
-    if (progress < 66) return "bg-health-warning";
+    if (progress < 30) return "bg-muted"; // Increased threshold from 25 to 30
+    if (progress < 60) return "bg-accent"; // Increased threshold from 50 to 60
+    if (progress < 85) return "bg-health-warning"; // Increased threshold from 75 to 85
     return "bg-health-good";
+  };
+  
+  // Calculate estimated time to vaccine completion with more pessimistic estimate
+  const getVaccineEstimate = (progress: number, currentYear: number, currentMonth: number) => {
+    if (progress >= 100) return "Complete";
+    if (progress <= 0) return "Unknown";
+    
+    // More pessimistic estimate based on current progress and assuming slower progression
+    // Add 15% more time to reflect increased difficulty
+    const monthsRemaining = Math.ceil((100 - progress) / (progress / ((currentYear - 2021) * 12 + currentMonth)) * 1.15);
+    const targetMonth = ((currentMonth - 1 + monthsRemaining) % 12) + 1;
+    const targetYear = currentYear + Math.floor((currentMonth - 1 + monthsRemaining) / 12);
+    
+    return `Est. ${monthNames[targetMonth - 1]} ${targetYear}`;
   };
 
   return (
@@ -73,10 +89,20 @@ export const GameHUD = ({
             <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
               <div 
                 className={`h-full transition-all duration-500 ${getInfectionColor(globalInfection)} ${
-                  globalInfection > 75 ? 'infection-glow' : ''
+                  globalInfection > 60 ? 'infection-glow' : ''
                 }`}
                 style={{ width: `${globalInfection}%` }}
               />
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              <span className={globalInfection > 75 ? 'text-infection-critical' : ''}>
+                {globalInfection > 85 ? 'CRITICAL: System collapse imminent!' :
+                 globalInfection > 75 ? 'SEVERE: Healthcare systems failing' :
+                 globalInfection > 55 ? 'HIGH: Resources strained' :
+                 globalInfection > 35 ? 'MODERATE: Concerning spread' :
+                 globalInfection > 15 ? 'CAUTIOUS: Situation developing' :
+                 'CONTROLLED'}
+              </span>
             </div>
           </div>
 
@@ -93,6 +119,19 @@ export const GameHUD = ({
                 style={{ width: `${vaccineProgress}%` }}
               />
             </div>
+            <div className="text-xs text-muted-foreground mt-1 flex justify-between">
+              <span>
+                {vaccineProgress < 15 ? 'Early research' :
+                 vaccineProgress < 35 ? 'Prototype development' :
+                 vaccineProgress < 60 ? 'Clinical trials' :
+                 vaccineProgress < 80 ? 'Production scaling' :
+                 vaccineProgress < 95 ? 'Distribution planning' :
+                 'Final approval'}
+              </span>
+              <span className="font-medium">
+                {getVaccineEstimate(vaccineProgress, currentYear, currentMonth)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -102,6 +141,7 @@ export const GameHUD = ({
             onClick={onResearchInvestment}
             disabled={availableDoctors < 2}
             className="bg-accent hover:bg-accent/80 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
+            title="Invest doctors in vaccine research. Returns diminish as research progresses and challenges become more complex."
           >
             Research Investment (-2 Docs) 
           </button>

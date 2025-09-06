@@ -21,11 +21,25 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     }
   }, [countries, selectedCountry]);
 
-  const getInfectionIntensity = (level: number) => {
-    if (level < 25) return "bg-secondary border-muted";
-    if (level < 50) return "bg-infection-low border-infection-low";
-    if (level < 75) return "bg-infection-medium border-infection-medium";
-    return "bg-infection-critical border-infection-critical infection-glow";
+  const getInfectionIntensity = (level: number, importance: number) => {
+    // Base infection color based on level
+    let baseClass = "";
+    if (level < 20) baseClass = "bg-secondary border-muted";
+    else if (level < 40) baseClass = "bg-infection-low border-infection-low";
+    else if (level < 65) baseClass = "bg-infection-medium border-infection-medium";
+    else baseClass = "bg-infection-critical border-infection-critical infection-glow";
+    
+    // Add size modifier based on country importance - more dramatic scaling
+    const sizeClass = importance > 85 ? "scale-140" : 
+                     importance > 70 ? "scale-125" : 
+                     importance > 50 ? "scale-110" : 
+                     importance < 30 ? "scale-75" :
+                     importance < 50 ? "scale-90" : "";
+    
+    // Add pulsing effect for very high infection levels
+    const pulseClass = level > 75 ? "animate-pulse" : "";
+    
+    return `${baseClass} ${sizeClass} ${pulseClass}`;
   };
 
   const handleCountryClick = (country: Country) => {
@@ -93,11 +107,12 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
         {countries.map((country) => (
           <div
             key={country.id}
-            className={`absolute cursor-pointer transition-all duration-300 hover:scale-110 pointer-events-auto ${getInfectionIntensity(country.infectionLevel)}`}
+            className={`absolute cursor-pointer transition-all duration-300 hover:scale-110 pointer-events-auto ${getInfectionIntensity(country.infectionLevel, country.importance)}`}
             style={{
               left: `${country.x}%`,
               top: `${country.y}%`,
               transform: 'translate(-50%, -50%)',
+              transition: 'all 0.5s ease-in-out',
             }}
             onClick={() => handleCountryClick(country)}
           >
@@ -165,6 +180,70 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
               <span className="text-lg font-bold text-primary-glow">
                 {selectedCountry.doctorsAssigned} ⚕️
               </span>
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-muted-foreground">Strategic Importance</span>
+                <span className="text-sm font-bold text-foreground">
+                  {Math.round(selectedCountry.importance)}/100
+                  {selectedCountry.importance > 80 && <span className="ml-1 text-primary-glow">★★★</span>}
+                  {selectedCountry.importance > 60 && selectedCountry.importance <= 80 && <span className="ml-1 text-primary">★★</span>}
+                  {selectedCountry.importance > 40 && selectedCountry.importance <= 60 && <span className="ml-1 text-accent">★</span>}
+                </span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    selectedCountry.importance < 40 ? 'bg-muted' :
+                    selectedCountry.importance < 60 ? 'bg-accent' :
+                    selectedCountry.importance < 80 ? 'bg-primary' :
+                    'bg-primary-glow'
+                  } ${
+                    selectedCountry.importance > 80 ? 'animate-pulse' : ''
+                  }`}
+                  style={{ width: `${selectedCountry.importance}%` }}
+                />
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                <span>
+                  {selectedCountry.importance > 80 ? 'Critical global influence' :
+                   selectedCountry.importance > 60 ? 'Major regional power' :
+                   selectedCountry.importance > 40 ? 'Moderate influence' :
+                   'Limited strategic impact'}
+                </span>
+              </div>
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-muted-foreground">Economic Value</span>
+                <span className="text-sm font-bold text-foreground">
+                  {Math.round(selectedCountry.value)}/100
+                  {selectedCountry.value > 80 && <span className="ml-1 text-primary-glow">💰💰💰</span>}
+                  {selectedCountry.value > 60 && selectedCountry.value <= 80 && <span className="ml-1 text-primary">💰💰</span>}
+                  {selectedCountry.value > 40 && selectedCountry.value <= 60 && <span className="ml-1 text-accent">💰</span>}
+                </span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    selectedCountry.value < 40 ? 'bg-muted' :
+                    selectedCountry.value < 60 ? 'bg-accent' :
+                    selectedCountry.value < 80 ? 'bg-primary' :
+                    'bg-primary-glow'
+                  }`}
+                  style={{ width: `${selectedCountry.value}%` }}
+                />
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                <span>
+                  {selectedCountry.value > 80 ? 'Global economic powerhouse' :
+                   selectedCountry.value > 60 ? 'Strong economic contributor' :
+                   selectedCountry.value > 40 ? 'Moderate economic value' :
+                   'Developing economy'}
+                </span>
+              </div>
             </div>
 
             {selectedCountry.isHotspot && (
