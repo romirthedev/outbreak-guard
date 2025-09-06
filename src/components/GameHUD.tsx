@@ -115,7 +115,7 @@ export const GameHUD = ({
                 style={{ width: `${vaccineProgress}%` }}
               />
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-1 flex justify-between">
               <span>
                 {vaccineProgress < 15 ? 'Early research' :
                  vaccineProgress < 35 ? 'Prototype development' :
@@ -124,22 +124,22 @@ export const GameHUD = ({
                  vaccineProgress < 95 ? 'Distribution planning' :
                  'Final approval'}
               </span>
+              <span className="font-medium">
+                Allocated: <span className="text-foreground">{totalAssignedDoctors + researchCommittedDoctors}</span>
+              </span>
             </div>
           </div>
         </div>
 
         {/* Right side - Actions */}
         <div className="flex items-center space-x-4">
-          <div className="text-sm text-muted-foreground mr-2 hidden sm:block">
-            <div>Allocated: <span className="font-semibold text-foreground">{totalAssignedDoctors}</span> field, <span className="font-semibold text-foreground">{researchCommittedDoctors}</span> research</div>
-          </div>
           <button
             onClick={onResearchInvestment}
             disabled={availableDoctors < 2}
             className="bg-accent hover:bg-accent/80 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
             title="Invest doctors in vaccine research. Returns diminish as research progresses and challenges become more complex."
           >
-            Research Investment (-2 Docs) 
+            Research Investment
           </button>
           <button
             onClick={onResearchRecall}
@@ -147,7 +147,7 @@ export const GameHUD = ({
             className="bg-orange-600 hover:bg-orange-700 disabled:bg-muted disabled:text-muted-foreground text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
             title="Recall all doctors from research and return them to the available pool."
           >
-            Research Recall (+{researchCommittedDoctors} Docs)
+            Research Recall
           </button>
           <button
             onClick={onAdvanceMonth}

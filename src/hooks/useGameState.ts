@@ -122,12 +122,6 @@ export const useGameState = () => {
 
   const allocateDoctor = useCallback((countryId: string) => {
     if (gameState.availableDoctors <= 0) {
-      setGameState(prevState => ({
-        ...prevState,
-        monthlyEvents: [...prevState.monthlyEvents, 
-          "No available doctors to send."
-        ]
-      }));
       return;
     }
 
@@ -140,13 +134,6 @@ export const useGameState = () => {
       
       // If already at limit, don't allow more doctors
       if (country.doctorsAssigned >= importanceBasedLimit) {
-        // Add a message about this limitation
-        setGameState(prevState => ({
-          ...prevState,
-          monthlyEvents: [...prevState.monthlyEvents, 
-            `${country.name} cannot support more than ${importanceBasedLimit} doctors due to infrastructure limitations.`
-          ]
-        }));
         return prev;
       }
       
@@ -171,12 +158,6 @@ export const useGameState = () => {
     setCountries(prev => {
       const country = prev.find(c => c.id === countryId);
       if (!country || country.doctorsAssigned <= 0) {
-        setGameState(prevState => ({
-          ...prevState,
-          monthlyEvents: [...prevState.monthlyEvents, 
-            `${country?.name || 'This country'} has no doctors to recall.`
-          ]
-        }));
         return prev;
       }
 
@@ -433,7 +414,6 @@ export const useGameState = () => {
       setGameState(prev => ({
         ...prev,
         vaccineProgress: Math.min(100, prev.vaccineProgress + value),
-        monthlyEvents: [...prev.monthlyEvents, `Investment in vaccine research yields ${value}% progress.`]
       }));
     } else if (gameState.availableDoctors >= 2) {
       setGameState(prev => {
@@ -444,7 +424,6 @@ export const useGameState = () => {
           ...prev,
           researchCommittedDoctors: newResearchCommitted,
           availableDoctors: expectedAvailable,
-          monthlyEvents: [...prev.monthlyEvents, "2 doctors committed to research. Progress will be calculated next month."]
         });
       });
     }
@@ -459,7 +438,6 @@ export const useGameState = () => {
           ...prev,
           researchCommittedDoctors: 0,
           availableDoctors: newAvailableDoctors,
-          monthlyEvents: [...prev.monthlyEvents, "Research doctors recalled and returned to available pool."]
         });
       });
     }
@@ -520,7 +498,6 @@ export const useGameState = () => {
       setGameState(prev => ({
         ...prev,
         availableDoctors: Math.max(0, Math.min(expectedAvailableDoctors, prev.totalDoctors)),
-        monthlyEvents: [...prev.monthlyEvents, "Doctor count discrepancy detected and corrected."]
       }));
     }
   }, [countries, gameState.availableDoctors, gameState.totalDoctors, gameState.researchCommittedDoctors]);

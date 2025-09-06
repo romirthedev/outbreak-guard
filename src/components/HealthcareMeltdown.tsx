@@ -7,11 +7,13 @@ import { GameHUD } from '@/components/GameHUD';
 import { WorldMap } from '@/components/WorldMap';
 import { GameOverScreen } from '@/components/GameOverScreen';
 import { HowToPlayScreen } from '@/components/HowToPlayScreen';
+import { Notification } from '@/components/Notification';
 
 export const HealthcareMeltdown = () => {
   const [showMonthlyChoice, setShowMonthlyChoice] = useState(false);
   const [monthlyChoiceOptions, setMonthlyChoiceOptions] = useState<{ id: string; text: string; effect: MonthlyEffect }[]>([]);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
   const {
     gameState,
     countries,
@@ -67,6 +69,60 @@ export const HealthcareMeltdown = () => {
   const handleReturnToMenu = () => {
     setShowHowToPlay(false);
     resetGame();
+  };
+
+  const showNotification = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setNotification({ message, type });
+  };
+
+  const handleAllocateDoctor = (countryId: string) => {
+    const country = countries.find(c => c.id === countryId);
+    if (!country) return;
+
+    if (gameState.availableDoctors <= 0) {
+      showNotification("No available doctors to send.", 'error');
+      return;
+    }
+
+    const importanceBasedLimit = Math.ceil(country.importance / 20);
+    if (country.doctorsAssigned >= importanceBasedLimit) {
+      showNotification(`${country.name} cannot support more than ${importanceBasedLimit} doctors due to infrastructure limitations.`, 'warning');
+      return;
+    }
+
+    allocateDoctor(countryId);
+    showNotification(`Doctor sent to ${country.name}`, 'success');
+  };
+
+  const handleResearchInvestment = () => {
+    if (gameState.availableDoctors < 2) {
+      showNotification("Not enough doctors available for research investment. Need at least 2 doctors.", 'error');
+      return;
+    }
+
+    researchInvestment();
+    showNotification("2 doctors committed to research. Progress will be calculated next month.", 'success');
+  };
+
+  const handleRecallDoctor = (countryId: string) => {
+    const country = countries.find(c => c.id === countryId);
+    if (!country || country.doctorsAssigned <= 0) {
+      showNotification(`${country?.name || 'This country'} has no doctors to recall.`, 'warning');
+      return;
+    }
+
+    recallDoctor(countryId);
+    showNotification(`Doctor recalled from ${country.name}`, 'success');
+  };
+
+  const handleResearchRecall = () => {
+    if ((gameState.researchCommittedDoctors || 0) <= 0) {
+      showNotification("No research doctors to recall.", 'warning');
+      return;
+    }
+
+    researchRecall();
+    showNotification("Research doctors recalled and returned to available pool.", 'success');
   };
 
   // Validate doctor counts periodically to catch any discrepancies
@@ -131,15 +187,15 @@ export const HealthcareMeltdown = () => {
           totalAssignedDoctors={countries.reduce((sum, c) => sum + c.doctorsAssigned, 0)}
           researchCommittedDoctors={gameState.researchCommittedDoctors}
           onAdvanceMonth={handleAdvanceMonth} // Use the new handler
-          onResearchInvestment={researchInvestment}
-          onResearchRecall={researchRecall}
+          onResearchInvestment={handleResearchInvestment}
+          onResearchRecall={handleResearchRecall}
         />
       
       <div className="flex-1 relative">
         <WorldMap
           countries={countries}
-          onAllocateDoctor={allocateDoctor}
-          onRecallDoctor={recallDoctor}
+          onAllocateDoctor={handleAllocateDoctor}
+          onRecallDoctor={handleRecallDoctor}
           availableDoctors={gameState.availableDoctors}
         />
         
@@ -160,6 +216,15 @@ export const HealthcareMeltdown = () => {
           </div>
         )}
       </div>
+
+      {/* Notification */}
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onDismiss={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 };
