@@ -215,6 +215,20 @@ export const useGameState = () => {
     const newMonth = gameState.currentMonth === 12 ? 1 : gameState.currentMonth + 1;
     const newYear = gameState.currentMonth === 12 ? gameState.currentYear + 1 : gameState.currentYear;
 
+    // Check if we've reached 2025 without a vaccine - player loses
+    if (newYear > 2025) {
+      setGameState(prev => ({
+        ...prev,
+        currentMonth: newMonth,
+        currentYear: newYear,
+        gameStatus: 'lost',
+        monthlyEvents: [
+          "Time's up! The 2025 deadline has passed without a vaccine. Humanity has failed."
+        ],
+      }));
+      return;
+    }
+
     // If vaccine is already complete, trigger win on this next-month action
     if (gameState.vaccineProgress >= 100) {
       setGameState(prev => ({
