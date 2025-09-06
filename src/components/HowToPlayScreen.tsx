@@ -82,7 +82,7 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
               <li className="flex items-start space-x-2">
                 <span className="text-infection-high mt-1">•</span>
                 <div>
-                  <strong className="text-foreground">Hotspots Matter:</strong> Countries marked with 🔥 have higher impact when treated
+                  <strong className="text-foreground">Hotspots Matter:</strong> Countries with high importance or value have a higher impact when treated
                 </div>
               </li>
               <li className="flex items-start space-x-2">
