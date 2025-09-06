@@ -118,7 +118,7 @@ export const GameHUD = ({
             <div className="text-xs text-muted-foreground mt-1 flex justify-between">
               <span>
                 {vaccineProgress < 15 ? 'Early research' :
-                 vaccineProgress < 35 ? 'Prototype development' :
+                 vaccineProgress < 35 ? 'Prototyping' :
                  vaccineProgress < 60 ? 'Clinical trials' :
                  vaccineProgress < 80 ? 'Production scaling' :
                  vaccineProgress < 95 ? 'Distribution planning' :
