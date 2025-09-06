@@ -110,11 +110,11 @@ export const useGameState = () => {
   // Generate monthly choice options
   const generateMonthlyChoices = useCallback((): MonthlyChoiceOption[] => {
     const options: MonthlyChoiceOption[] = [
-      { id: 'option1', text: 'Focus on Vaccine Research (Research Boost)', effect: { type: 'researchBoost', value: 10 } },
-      { id: 'option2', text: 'Recruit More Doctors (+2 Doctors)', effect: { type: 'addDoctors', value: 2 } },
-      { id: 'option3', text: 'Implement Strict Lockdowns (Spread Decrease)', effect: { type: 'spreadDecrease', value: 5 } },
-      { id: 'option4', text: 'Relax Restrictions (Spread Increase)', effect: { type: 'spreadIncrease', value: 8 } },
-      { id: 'option5', text: 'Doctor Fatigue (Lose 1 Doctor)', effect: { type: 'loseDoctors', value: 1 } },
+      { id: 'option1', text: 'Focus on Vaccine Research', effect: { type: 'researchBoost', value: 10 } },
+      { id: 'option2', text: 'Recruit More Doctors', effect: { type: 'addDoctors', value: 2 } },
+      { id: 'option3', text: 'Implement Strict Lockdowns', effect: { type: 'spreadDecrease', value: 5 } },
+      { id: 'option4', text: 'Relax Restrictions', effect: { type: 'spreadIncrease', value: 8 } },
+      { id: 'option5', text: 'Doctor Fatigue', effect: { type: 'loseDoctors', value: 1 } },
     ];
     const numOptions = Math.floor(Math.random() * 4) + 2; // 2 to 5 options
     const shuffled = options.sort(() => 0.5 - Math.random());

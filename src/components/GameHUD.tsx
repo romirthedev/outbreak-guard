@@ -11,7 +11,7 @@ export interface GameHUDProps {
   totalAssignedDoctors?: number;
   researchCommittedDoctors?: number;
   onAdvanceMonth: () => void;
-  onResearchInvestment: (value?: number) => void;
+  onResearchInvestment: () => void;
   onResearchRecall: () => void;
 }
 
