@@ -69,7 +69,7 @@ export const HealthcareMeltdown = () => {
 
   // Show main game screen
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden">
       <GameHUD
         availableDoctors={gameState.availableDoctors}
         totalDoctors={gameState.totalDoctors}

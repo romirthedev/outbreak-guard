@@ -7,7 +7,7 @@ interface StartScreenProps {
 
 export const StartScreen = ({ onStartGame, onHowToPlay }: StartScreenProps) => {
   return (
-    <div className="min-h-screen bg-gradient-dark flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background world map silhouette */}
       <div className="absolute inset-0 opacity-10">
         <svg 
