@@ -125,7 +125,7 @@ export const GameHUD = ({
                  'Final approval'}
               </span>
               <span className="font-medium">
-                Allocated: <span className="text-foreground">{totalAssignedDoctors + researchCommittedDoctors}</span>
+                Allocated: <span className="text-foreground">{researchCommittedDoctors}</span>
               </span>
             </div>
           </div>

@@ -93,13 +93,13 @@ export const HealthcareMeltdown = () => {
   };
 
   const handleResearchInvestment = () => {
-    if (gameState.availableDoctors < 2) {
-      showNotification("Not enough doctors available for research investment. Need at least 2 doctors.", 'error');
+    if (gameState.availableDoctors < 1) {
+      showNotification("Not enough doctors available for research investment. Need at least 1 doctor.", 'error');
       return;
     }
 
     researchInvestment();
-    showNotification("2 doctors committed to research. Progress will be calculated next month.", 'success');
+    showNotification("1 doctor committed to research. Progress will be calculated next month.", 'success');
   };
 
   const handleRecallDoctor = (countryId: string) => {

@@ -144,7 +144,7 @@ export const useGameState = () => {
     }));
     
     setCountries(randomizedCountries);
-  }, []);
+  }, [generateMonthlyChoices]);
 
   const allocateDoctor = useCallback((countryId: string) => {
     if (gameState.availableDoctors <= 0) {
@@ -373,7 +373,7 @@ export const useGameState = () => {
       totalWeight += weight;
     });
     
-    const newGlobalInfection = totalWeight > 0 ? totalWeightedInfection / totalWeight : 0;
+     let newGlobalInfection = totalWeight > 0 ? totalWeightedInfection / totalWeight : 0;
 
     // Check lose condition only; win is handled at the start of next month when vaccine is complete
     let newGameStatus = gameState.gameStatus;
@@ -462,9 +462,9 @@ export const useGameState = () => {
         ...prev,
         vaccineProgress: Math.min(100, prev.vaccineProgress + value),
       }));
-    } else if (gameState.availableDoctors >= 2) {
+    } else if (gameState.availableDoctors >= 1) {
       setGameState(prev => {
-        const newResearchCommitted = (prev.researchCommittedDoctors || 0) + 2;
+        const newResearchCommitted = (prev.researchCommittedDoctors || 0) + 1;
         const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
         const expectedAvailable = Math.max(0, prev.totalDoctors - totalAssignedDoctors - newResearchCommitted);
         return ({
