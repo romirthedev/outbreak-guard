@@ -2,17 +2,30 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
+export interface MonthlyChoiceOption {
+  id: string;
+  text: string;
+  effect: {
+    type: 'researchBoost' | 'addDoctors' | 'spreadDecrease' | 'spreadIncrease' | 'loseDoctors';
+    value: number;
+  };
+}
+
 interface MonthlyChoiceModalProps {
-  options: { id: string; text: string; effect: any }[];
-  onChoiceSelected: (effect: any) => void;
+  options: MonthlyChoiceOption[];
+  onChoiceSelected: (effect: MonthlyChoiceOption['effect']) => void;
+  open: boolean;
+  onClose: () => void;
 }
 
 export const MonthlyChoiceModal: React.FC<MonthlyChoiceModalProps> = ({
   options,
   onChoiceSelected,
+  open,
+  onClose,
 }) => {
   return (
-    <Dialog open={true}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Monthly Event</DialogTitle>

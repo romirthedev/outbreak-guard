@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useGameState } from '@/hooks/useGameState';
+import { useGameState, type MonthlyEffect } from '@/hooks/useGameState';
 
 import { StartScreen } from '@/components/StartScreen';
 import { MonthlyChoiceModal } from '@/components/MonthlyChoiceModal';
@@ -7,12 +7,6 @@ import { GameHUD } from '@/components/GameHUD';
 import { WorldMap } from '@/components/WorldMap';
 import { GameOverScreen } from '@/components/GameOverScreen';
 import { HowToPlayScreen } from '@/components/HowToPlayScreen';
-
-
-type MonthlyEffect = {
-  type: 'researchBoost' | 'addDoctors' | 'spreadDecrease' | 'spreadIncrease' | 'loseDoctors';
-  value: number;
-};
 
 export const HealthcareMeltdown = () => {
   const [showMonthlyChoice, setShowMonthlyChoice] = useState(false);
@@ -27,6 +21,7 @@ export const HealthcareMeltdown = () => {
     advanceMonth,
     resetGame,
     researchInvestment,
+    researchRecall,
     validateDoctorCounts,
     addDoctors,
     loseDoctors,
@@ -64,27 +59,9 @@ export const HealthcareMeltdown = () => {
 
   const handleChoiceSelected = (effect: MonthlyEffect) => {
     setShowMonthlyChoice(false);
-    // Apply the effect based on the choice
-    switch (effect.type) {
-      case 'researchBoost':
-        researchInvestment(effect.value); // Assuming researchInvestment can take a value
-        break;
-      case 'addDoctors':
-        addDoctors(effect.value);
-        break;
-      case 'spreadDecrease':
-        decreaseGlobalInfection(effect.value);
-        break;
-      case 'spreadIncrease':
-        increaseGlobalInfection(effect.value);
-        break;
-      case 'loseDoctors':
-        loseDoctors(effect.value);
-        break;
-      default:
-        break;
-    }
-    advanceMonth(); // Then advance the month as usual
+    
+    // Pass the effect to advanceMonth to be applied as part of the month advancement
+    advanceMonth(effect);
   };
 
   const handleReturnToMenu = () => {
@@ -135,6 +112,8 @@ export const HealthcareMeltdown = () => {
       <MonthlyChoiceModal
         options={monthlyChoiceOptions}
         onChoiceSelected={handleChoiceSelected}
+        open={showMonthlyChoice}
+        onClose={() => setShowMonthlyChoice(false)}
       />
     );
   }
@@ -142,16 +121,19 @@ export const HealthcareMeltdown = () => {
   // Show main game screen
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <GameHUD
-        availableDoctors={gameState.availableDoctors}
-        totalDoctors={gameState.totalDoctors}
-        currentMonth={gameState.currentMonth}
-        currentYear={gameState.currentYear}
-        globalInfection={gameState.globalInfection}
-        vaccineProgress={gameState.vaccineProgress}
-        onAdvanceMonth={handleAdvanceMonth} // Use the new handler
-        onResearchInvestment={researchInvestment}
-      />
+        <GameHUD
+          availableDoctors={gameState.availableDoctors}
+          totalDoctors={gameState.totalDoctors}
+          currentMonth={gameState.currentMonth}
+          currentYear={gameState.currentYear}
+          globalInfection={gameState.globalInfection}
+          vaccineProgress={gameState.vaccineProgress}
+          totalAssignedDoctors={countries.reduce((sum, c) => sum + c.doctorsAssigned, 0)}
+          researchCommittedDoctors={gameState.researchCommittedDoctors}
+          onAdvanceMonth={handleAdvanceMonth} // Use the new handler
+          onResearchInvestment={researchInvestment}
+          onResearchRecall={researchRecall}
+        />
       
       <div className="flex-1 relative">
         <WorldMap
@@ -168,9 +150,13 @@ export const HealthcareMeltdown = () => {
               <span className="text-primary-glow mr-2">📢</span>
               Monthly Update
             </h4>
-            <p className="text-sm text-muted-foreground">
-              {gameState.monthlyEvents[0]}
-            </p>
+            <div className="space-y-1">
+              {gameState.monthlyEvents.map((event, index) => (
+                <p key={index} className="text-sm text-muted-foreground">
+                  {event}
+                </p>
+              ))}
+            </div>
           </div>
         )}
       </div>
