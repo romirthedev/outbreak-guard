@@ -29,6 +29,7 @@ export const HealthcareMeltdown = () => {
     loseDoctors,
     increaseGlobalInfection,
     decreaseGlobalInfection,
+    clearMonthlyEvents,
   } = useGameState();
 
   const handleStartGame = () => {
@@ -202,9 +203,18 @@ export const HealthcareMeltdown = () => {
         {/* Monthly Events Display */}
         {gameState.monthlyEvents.length > 0 && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-primary/30 rounded-lg p-4 max-w-md mx-auto">
-            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center">
-              <span className="text-primary-glow mr-2">📢</span>
-              Monthly Update
+            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center justify-between">
+              <span className="flex items-center">
+                <span className="text-primary-glow mr-2">📢</span>
+                Monthly Update
+              </span>
+              <button
+                onClick={() => clearMonthlyEvents()}
+                className="text-muted-foreground hover:text-foreground text-lg leading-none"
+                aria-label="Dismiss monthly update"
+              >
+                &times;
+              </button>
             </h4>
             <div className="space-y-1">
               {gameState.monthlyEvents.map((event, index) => (

@@ -120,6 +120,13 @@ export const useGameState = () => {
     setCountries(randomizedCountries);
   }, []);
 
+  const clearMonthlyEvents = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      monthlyEvents: [],
+    }));
+  }, []);
+
   const allocateDoctor = useCallback((countryId: string) => {
     if (gameState.availableDoctors <= 0) {
       return;
@@ -517,5 +524,6 @@ export const useGameState = () => {
     loseDoctors,
     increaseGlobalInfection,
     decreaseGlobalInfection,
+    clearMonthlyEvents,
   };
 };
