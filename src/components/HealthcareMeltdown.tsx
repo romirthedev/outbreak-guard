@@ -57,7 +57,7 @@ export const HealthcareMeltdown = () => {
     return (
       <GameOverScreen
         isVictory={gameState.gameStatus === 'won'}
-        finalMonth={gameState.currentMonth}
+        finalMonth={gameState.currentMonth} 
         finalYear={gameState.currentYear}
         finalInfection={gameState.globalInfection}
         vaccineProgress={gameState.vaccineProgress}

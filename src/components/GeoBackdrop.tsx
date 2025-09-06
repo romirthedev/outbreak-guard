@@ -11,11 +11,13 @@ type Marker = {
 interface GeoBackdropProps {
   className?: string;
   backgroundColor?: string;
+  markers?: Marker[];
+  onMarkerClick?: (index: number) => void;
 }
 
 // A lightweight map backdrop using jsvectormap. It sits behind the gameplay UI
 // to provide geographic context. It supports panning/zooming and optional markers.
-export const GeoBackdrop = ({ className, backgroundColor = 'transparent' }: GeoBackdropProps) => {
+export const GeoBackdrop = ({ className, backgroundColor = 'transparent', markers = [], onMarkerClick }: GeoBackdropProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<any>(null);
 
@@ -58,9 +60,19 @@ export const GeoBackdrop = ({ className, backgroundColor = 'transparent' }: GeoB
             fill: 'rgba(255,255,255,0.2)'
           },
         },
-        // No markers; keep the map clean under gameplay UI
-        markerStyle: undefined,
+        markerStyle: {
+          initial: { fill: 'hsl(var(--primary-glow))' },
+          hover: { fill: 'hsl(var(--primary))' },
+        },
+        markers: markers.map(m => ({ name: m.name, coords: m.coords })),
       });
+
+      // Wire marker clicks to parent
+      try {
+        mapInstanceRef.current.on('markerClick', (index: number) => {
+          if (typeof onMarkerClick === 'function') onMarkerClick(index);
+        });
+      } catch {}
 
       // Ensure the SVG resizes to fill container changes
       const updateSize = () => {
@@ -98,7 +110,7 @@ export const GeoBackdrop = ({ className, backgroundColor = 'transparent' }: GeoB
         mapInstanceRef.current = null;
       }
     };
-  }, [backgroundColor]);
+  }, [backgroundColor, markers, onMarkerClick]);
 
   return (
     <div

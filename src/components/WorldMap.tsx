@@ -32,9 +32,8 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     setSelectedCountry(country);
   };
 
-  // Map our countries to optional jsvectormap markers (lat, lng)
-  // Note: We keep the existing x/y percent positioning for game dots; markers are only for context.
-  const markers = useMemo(() => {
+  // Map our countries to jsvectormap markers and retain country id mapping
+  const { markers, markerCountryIds } = useMemo(() => {
     const countryToLatLng: Record<string, [number, number]> = {
       usa: [37.0902, -95.7129],
       china: [35.8617, 104.1954],
@@ -48,12 +47,14 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
       australia: [-25.2744, 133.7751],
     };
 
-    return countries
-      .map(c => ({
-        name: c.name as string,
-        coords: countryToLatLng[c.id] as [number, number] | undefined,
-      }))
-      .filter((m): m is { name: string; coords: [number, number] } => Array.isArray(m.coords));
+    const entries = countries
+      .map(c => ({ id: c.id, name: c.name as string, coords: countryToLatLng[c.id] as [number, number] | undefined }))
+      .filter((e): e is { id: string; name: string; coords: [number, number] } => Array.isArray(e.coords));
+
+    return {
+      markers: entries.map(e => ({ name: e.name, coords: e.coords })),
+      markerCountryIds: entries.map(e => e.id),
+    };
   }, [countries]);
 
   return (
@@ -62,6 +63,12 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
       <GeoBackdrop
         className="absolute inset-0 z-0"
         backgroundColor="transparent"
+        markers={markers}
+        onMarkerClick={(index) => {
+          const id = markerCountryIds[index];
+          const country = countries.find(c => c.id === id);
+          if (country) setSelectedCountry(country);
+        }}
       />
       {/* World Map Background */}
       <div className="absolute inset-0 pointer-events-none">
@@ -88,38 +95,7 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
         </svg>
       </div>
 
-      {/* Countries as interactive dots */}
-      <div className="absolute inset-0 z-10 p-8 pointer-events-none">
-        {countries.map((country) => (
-          <div
-            key={country.id}
-            className={`absolute cursor-pointer transition-all duration-300 hover:scale-110 pointer-events-auto ${getInfectionIntensity(country.infectionLevel)}`}
-            style={{
-              left: `${country.x}%`,
-              top: `${country.y}%`,
-              transform: 'translate(-50%, -50%)',
-            }}
-            onClick={() => handleCountryClick(country)}
-          >
-            <div className="relative w-8 h-8 rounded-full border-2 flex items-center justify-center">
-              {/* Hotspot indicator */}
-              {country.isHotspot && (
-                <div className="absolute -inset-1 rounded-full border border-primary-glow animate-pulse" />
-              )}
-              
-              {/* Doctor icons */}
-              {country.doctorsAssigned > 0 && (
-                <div className="absolute -top-2 -right-2 bg-primary-glow text-background text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center doctor-icon">
-                  {country.doctorsAssigned}
-                </div>
-              )}
-
-              {/* Country indicator */}
-              <div className="w-3 h-3 rounded-full bg-current opacity-80" />
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Country markers are handled by GeoBackdrop; removed custom overlay dots */}
 
       {/* Country Details Panel */}
       {selectedCountry && (
