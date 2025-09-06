@@ -46,13 +46,17 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
 
   // Size/animation modifiers without background to avoid square red boxes
   const getDotModifiers = (level: number, importance: number) => {
-    const sizeClass = importance > 85 ? "scale-140" : 
-                     importance > 70 ? "scale-125" : 
-                     importance > 50 ? "scale-110" : 
-                     importance < 30 ? "scale-75" :
-                     importance < 50 ? "scale-90" : "";
     const pulseClass = level > 75 ? "animate-pulse" : "";
-    return `${sizeClass} ${pulseClass}`.trim();
+    return `${pulseClass}`.trim();
+  };
+
+  // Importance-based size applied on the outer wrapper so hover/near on inner always scales up
+  const getImportanceScaleClass = (importance: number) => {
+    return importance > 85 ? "scale-140" :
+           importance > 70 ? "scale-125" :
+           importance > 50 ? "scale-110" :
+           importance < 30 ? "scale-75" :
+           importance < 50 ? "scale-90" : "";
   };
 
   const getBgClass = (level: number) => {
@@ -158,19 +162,18 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
           return (
             <div
               key={country.id}
-              className={`group absolute cursor-pointer pointer-events-auto`}
+              className={`group absolute cursor-pointer pointer-events-auto transform -translate-x-1/2 -translate-y-1/2 ${getImportanceScaleClass(country.importance)}`}
               style={{
                 left: `${country.x}%`,
                 top: `${country.y}%`,
-                transform: 'translate(-50%, -50%)',
                 transition: 'all 0.5s ease-in-out',
               }}
               onClick={() => handleCountryClick(country)}
             >
               <div
                 className={
-                  `relative rounded-full border-2 flex items-center justify-center transition-transform duration-300 ${getBorderClass(country.infectionLevel)} ${getDotModifiers(country.infectionLevel, country.importance)} ` +
-                  `${near ? 'scale-110 red-glow' : ''} group-hover:scale-110`
+                  `relative rounded-full border-2 flex items-center justify-center transition-transform duration-300 will-change-transform ${getBorderClass(country.infectionLevel)} ${getDotModifiers(country.infectionLevel, country.importance)} ` +
+                  `${near ? 'scale-110 red-glow' : ''} hover:scale-110`
                 }
                 style={{ width: '1.25rem', height: '1.25rem' }}
               >
