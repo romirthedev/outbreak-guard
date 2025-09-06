@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useGameState, type MonthlyEffect } from '@/hooks/useGameState';
+import { useGameState, type MonthlyEffect, type MonthlyChoiceOption } from '@/hooks/useGameState';
 
 import { StartScreen } from '@/components/StartScreen';
 import { MonthlyChoiceModal } from '@/components/MonthlyChoiceModal';
@@ -11,7 +11,6 @@ import { Notification } from '@/components/Notification';
 
 export const HealthcareMeltdown = () => {
   const [showMonthlyChoice, setShowMonthlyChoice] = useState(false);
-  const [monthlyChoiceOptions, setMonthlyChoiceOptions] = useState<{ id: string; text: string; effect: MonthlyEffect }[]>([]);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
   const {
@@ -29,6 +28,7 @@ export const HealthcareMeltdown = () => {
     loseDoctors,
     increaseGlobalInfection,
     decreaseGlobalInfection,
+    clearPendingMonthlyChoices,
   } = useGameState();
 
   const handleStartGame = () => {
@@ -45,22 +45,20 @@ export const HealthcareMeltdown = () => {
   };
 
   const handleAdvanceMonth = () => {
-    // Generate random options for the user
-    const options: { id: string; text: string; effect: MonthlyEffect }[] = [
-      { id: 'option1', text: 'Focus on Vaccine Research (Research Boost)', effect: { type: 'researchBoost', value: 10 } },
-      { id: 'option2', text: 'Recruit More Doctors (+2 Doctors)', effect: { type: 'addDoctors', value: 2 } },
-      { id: 'option3', text: 'Implement Strict Lockdowns (Spread Decrease)', effect: { type: 'spreadDecrease', value: 5 } },
-      { id: 'option4', text: 'Relax Restrictions (Spread Increase)', effect: { type: 'spreadIncrease', value: 8 } },
-      { id: 'option5', text: 'Doctor Fatigue (Lose 1 Doctor)', effect: { type: 'loseDoctors', value: 1 } },
-    ];
-    const numOptions = Math.floor(Math.random() * 4) + 2; // 2 to 5 options
-    const shuffled = options.sort(() => 0.5 - Math.random());
-    setMonthlyChoiceOptions(shuffled.slice(0, numOptions));
-    setShowMonthlyChoice(true);
+    // Show the modal with the pending choices from the game state
+    if (gameState.pendingMonthlyChoices.length > 0) {
+      setShowMonthlyChoice(true);
+    } else {
+      // If no pending choices, advance month without choices (shouldn't happen in normal gameplay)
+      advanceMonth();
+    }
   };
 
   const handleChoiceSelected = (effect: MonthlyEffect) => {
     setShowMonthlyChoice(false);
+    
+    // Clear the pending choices since a choice was made
+    clearPendingMonthlyChoices();
     
     // Pass the effect to advanceMonth to be applied as part of the month advancement
     advanceMonth(effect);
@@ -166,7 +164,7 @@ export const HealthcareMeltdown = () => {
   if (showMonthlyChoice) {
     return (
       <MonthlyChoiceModal
-        options={monthlyChoiceOptions}
+        options={gameState.pendingMonthlyChoices}
         onChoiceSelected={handleChoiceSelected}
         open={showMonthlyChoice}
         onClose={() => setShowMonthlyChoice(false)}
