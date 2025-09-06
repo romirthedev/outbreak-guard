@@ -116,7 +116,7 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
               <li className="flex items-start space-x-2">
                 <span className="text-primary-glow mt-1">•</span>
                 <div>
-                  <strong className="text-foreground">Random Events:</strong> Unexpected events will affect the pandemic
+                  <strong className="text-foreground">Random Events:</strong> Unexpected events will affect the pandemic's spread
                 </div>
               </li>
               <li className="flex items-start space-x-2">
