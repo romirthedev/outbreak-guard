@@ -40,12 +40,12 @@ const initialCountries: Country[] = [
   { id: 'usa', name: 'United States', population: 330, infectionLevel: 40, doctorsAssigned: 0, isHotspot: true, importance: 95, value: 90, x: 20, y: 40 },
   { id: 'india', name: 'India', population: 1380, infectionLevel: 35, doctorsAssigned: 0, isHotspot: true, importance: 80, value: 70, x: 70, y: 50 },
   { id: 'brazil', name: 'Brazil', population: 215, infectionLevel: 45, doctorsAssigned: 0, isHotspot: true, importance: 65, value: 55, x: 35, y: 70 },
-  { id: 'italy', name: 'Italy', population: 60, infectionLevel: 50, doctorsAssigned: 0, isHotspot: true, importance: 60, value: 50, x: 52, y: 42 },
-  { id: 'germany', name: 'Germany', population: 83, infectionLevel: 25, doctorsAssigned: 0, isHotspot: false, importance: 75, value: 85, x: 50, y: 38 },
+  { id: 'italy', name: 'Italy', population: 60, infectionLevel: 50, doctorsAssigned: 0, isHotspot: true, importance: 60, value: 50, x: 50, y: 39 },
+  { id: 'germany', name: 'Germany', population: 83, infectionLevel: 25, doctorsAssigned: 0, isHotspot: false, importance: 75, value: 85, x: 49.5, y: 33 },
   { id: 'france', name: 'France', population: 68, infectionLevel: 30, doctorsAssigned: 0, isHotspot: false, importance: 70, value: 80, x: 47, y: 37 },
   { id: 'uk', name: 'United Kingdom', population: 67, infectionLevel: 33, doctorsAssigned: 0, isHotspot: false, importance: 73, value: 83, x: 46, y: 33 },
   { id: 'australia', name: 'Australia', population: 26, infectionLevel: 20, doctorsAssigned: 0, isHotspot: false, importance: 60, value: 65, x: 80, y: 80 },
-  { id: 'nigeria', name: 'Nigeria', population: 200, infectionLevel: 40, doctorsAssigned: 0, isHotspot: true, importance: 70, value: 60, x: 48, y: 60 }, // New African country
+  { id: 'nigeria', name: 'Nigeria', population: 200, infectionLevel: 40, doctorsAssigned: 0, isHotspot: true, importance: 70, value: 60, x: 48.5, y: 59 }, // New African country
   { id: 'southafrica', name: 'South Africa', population: 60, infectionLevel: 35, doctorsAssigned: 0, isHotspot: true, importance: 65, value: 55, x: 54, y: 80 }, // New African country
   { id: 'egypt', name: 'Egypt', population: 100, infectionLevel: 30, doctorsAssigned: 0, isHotspot: false, importance: 60, value: 50, x: 55, y: 50 }, // Moved up slightly
 ];
