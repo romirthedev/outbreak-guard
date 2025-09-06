@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Country } from '@/hooks/useGameState';
+import { GeoBackdrop } from '@/components/GeoBackdrop';
 
 interface WorldMapProps {
   countries: Country[];
@@ -31,10 +32,39 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
     setSelectedCountry(country);
   };
 
+  // Map our countries to optional jsvectormap markers (lat, lng)
+  // Note: We keep the existing x/y percent positioning for game dots; markers are only for context.
+  const markers = useMemo(() => {
+    const countryToLatLng: Record<string, [number, number]> = {
+      usa: [37.0902, -95.7129],
+      china: [35.8617, 104.1954],
+      india: [20.5937, 78.9629],
+      brazil: [-14.2350, -51.9253],
+      italy: [41.8719, 12.5674],
+      germany: [51.1657, 10.4515],
+      france: [46.2276, 2.2137],
+      uk: [55.3781, -3.4360],
+      japan: [36.2048, 138.2529],
+      australia: [-25.2744, 133.7751],
+    };
+
+    return countries
+      .map(c => ({
+        name: c.name as string,
+        coords: countryToLatLng[c.id] as [number, number] | undefined,
+      }))
+      .filter((m): m is { name: string; coords: [number, number] } => Array.isArray(m.coords));
+  }, [countries]);
+
   return (
     <div className="relative w-full h-full bg-gradient-dark overflow-hidden">
+      {/* Geographic backdrop with pan/zoom. Sits behind all gameplay UI. */}
+      <GeoBackdrop
+        className="absolute inset-0 z-0"
+        backgroundColor="transparent"
+      />
       {/* World Map Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <svg 
           viewBox="0 0 100 50" 
           className="w-full h-full opacity-20"
@@ -59,11 +89,11 @@ export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availabl
       </div>
 
       {/* Countries as interactive dots */}
-      <div className="absolute inset-0 p-8">
+      <div className="absolute inset-0 z-10 p-8 pointer-events-none">
         {countries.map((country) => (
           <div
             key={country.id}
-            className={`absolute cursor-pointer transition-all duration-300 hover:scale-110 ${getInfectionIntensity(country.infectionLevel)}`}
+            className={`absolute cursor-pointer transition-all duration-300 hover:scale-110 pointer-events-auto ${getInfectionIntensity(country.infectionLevel)}`}
             style={{
               left: `${country.x}%`,
               top: `${country.y}%`,
