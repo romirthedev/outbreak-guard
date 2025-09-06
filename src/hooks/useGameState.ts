@@ -354,22 +354,55 @@ export const useGameState = () => {
     setGameState(prev => ({ ...prev, gameStatus: 'menu' }));
   }, []);
 
-  const researchInvestment = useCallback(() => {
-    setGameState(prev => {
-      if (prev.availableDoctors < 2) return prev; // Not enough doctors
-
-      // Calculate diminishing returns based on current progress
-      // As vaccine progress increases, research investment becomes less effective
-      const progressFactor = Math.max(0.5, 1 - (prev.vaccineProgress / 100)); // Ranges from 1.0 to 0.5
-      const boost = Math.ceil(8 * progressFactor); // Ranges from 8 to 4 (reduced from flat 10)
-
-      return {
+  const researchInvestment = useCallback((value: number = 0) => {
+    if (value > 0) {
+      setGameState(prev => ({
+        ...prev,
+        vaccineProgress: Math.min(100, prev.vaccineProgress + value),
+        monthlyEvents: [...prev.monthlyEvents, `Investment in vaccine research yields ${value}% progress.`]
+      }));
+    } else if (gameState.availableDoctors >= 2) {
+      setGameState(prev => ({
         ...prev,
         availableDoctors: Math.max(0, prev.availableDoctors - 2),
-        vaccineProgress: Math.min(100, prev.vaccineProgress + boost),
-        monthlyEvents: [...prev.monthlyEvents, `Research Investment: Vaccine research boosted by ${boost}%!`]
-      };
-    });
+        vaccineProgress: Math.min(100, prev.vaccineProgress + (Math.random() * 5) + 2),
+        monthlyEvents: [...prev.monthlyEvents, "Investment in vaccine research yields progress."]
+      }));
+    }
+  }, [gameState.availableDoctors]);
+
+  const addDoctors = useCallback((num: number) => {
+    setGameState(prev => ({
+      ...prev,
+      availableDoctors: prev.availableDoctors + num,
+      totalDoctors: prev.totalDoctors + num,
+      monthlyEvents: [...prev.monthlyEvents, `Recruited ${num} new doctors.`]
+    }));
+  }, []);
+
+  const loseDoctors = useCallback((num: number) => {
+    setGameState(prev => ({
+      ...prev,
+      availableDoctors: Math.max(0, prev.availableDoctors - num),
+      totalDoctors: Math.max(0, prev.totalDoctors - num),
+      monthlyEvents: [...prev.monthlyEvents, `${num} doctors lost due to unforeseen circumstances.`]
+    }));
+  }, []);
+
+  const increaseGlobalInfection = useCallback((value: number) => {
+    setGameState(prev => ({
+      ...prev,
+      globalInfection: Math.min(100, prev.globalInfection + value),
+      monthlyEvents: [...prev.monthlyEvents, `Global infection increased by ${value}% due to new challenges.`]
+    }));
+  }, []);
+
+  const decreaseGlobalInfection = useCallback((value: number) => {
+    setGameState(prev => ({
+      ...prev,
+      globalInfection: Math.max(0, prev.globalInfection - value),
+      monthlyEvents: [...prev.monthlyEvents, `Global infection decreased by ${value}% due to effective measures.`]
+    }));
   }, []);
 
   // Validation function to ensure doctor counts are consistent
@@ -398,5 +431,9 @@ export const useGameState = () => {
     resetGame,
     researchInvestment,
     validateDoctorCounts,
+    addDoctors,
+    loseDoctors,
+    increaseGlobalInfection,
+    decreaseGlobalInfection,
   };
 };

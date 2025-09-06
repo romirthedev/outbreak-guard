@@ -41,6 +41,8 @@ export const GameHUD = ({
     return "bg-health-good";
   };
   
+
+
   // Calculate estimated time to vaccine completion with more pessimistic estimate
   const getVaccineEstimate = (progress: number, currentYear: number, currentMonth: number) => {
     if (progress >= 100) return "Complete";
