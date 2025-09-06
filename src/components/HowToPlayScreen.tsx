@@ -54,7 +54,7 @@ export const HowToPlayScreen = ({ onBack }: HowToPlayScreenProps) => {
               <li className="flex items-start space-x-2">
                 <span className="text-primary-glow mt-1">•</span>
                 <div>
-                  <strong className="text-foreground">10 Doctors:</strong> Your primary resource to fight the pandemic
+                  <strong className="text-foreground">8 Doctors:</strong> Your primary resource to fight the pandemic
                 </div>
               </li>
               <li className="flex items-start space-x-2">
