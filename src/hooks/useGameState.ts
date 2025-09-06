@@ -283,13 +283,13 @@ export const useGameState = () => {
         vaccineSetback = true;
       }
 
-      // Vaccine progress - slower progress for increased difficulty
+      // Vaccine progress
       // Now takes 84 months (7 years) instead of 72 months (6 years) to complete naturally
-      const baseVaccineProgress = isFinite(monthsElapsed) ? (monthsElapsed / 84) * 100 : 0; 
+      const baseVaccineProgress = isFinite(monthsElapsed) ? (monthsElapsed / 60) * 100 : 0; 
       
       // Calculate vaccine boost from both research-committed doctors and field doctors
-      const researchBoost = isFinite(prev.researchCommittedDoctors) ? (prev.researchCommittedDoctors || 0) * 0.5 : 0; // Each research doctor contributes 0.5% per month
-      const fieldBoost = isFinite(totalAssignedDoctors) ? totalAssignedDoctors * 0.2 : 0; // Each field doctor contributes 0.2% per month
+      const researchBoost = isFinite(prev.researchCommittedDoctors) ? (prev.researchCommittedDoctors || 0) * 1.2 : 0; // Each research doctor contributes 0.5% per month
+      const fieldBoost = isFinite(totalAssignedDoctors) ? totalAssignedDoctors * 0.5 : 0; // Each field doctor contributes 0.2% per month
       let vaccineBoost = isFinite(researchBoost + fieldBoost) ? researchBoost + fieldBoost : 0;
       
       // Apply vaccine setback if the event occurred
