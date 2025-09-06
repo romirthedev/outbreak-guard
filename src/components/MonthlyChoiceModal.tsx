@@ -1,19 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-
-export interface MonthlyChoiceOption {
-  id: string;
-  text: string;
-  effect: {
-    type: 'researchBoost' | 'addDoctors' | 'spreadDecrease' | 'spreadIncrease' | 'loseDoctors';
-    value: number;
-  };
-}
+import type { MonthlyChoiceOption, MonthlyEffect } from '@/hooks/useGameState';
 
 interface MonthlyChoiceModalProps {
   options: MonthlyChoiceOption[];
-  onChoiceSelected: (effect: MonthlyChoiceOption['effect']) => void;
+  onChoiceSelected: (effect: MonthlyEffect) => void;
   open: boolean;
   onClose: () => void;
 }

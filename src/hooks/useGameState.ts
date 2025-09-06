@@ -18,6 +18,8 @@ export interface Country {
   infectionLevel: number; // 0-100
   doctorsAssigned: number;
   isHotspot: boolean;
+  importance: number; // 0-100 strategic importance
+  value: number; // 0-100 economic value
   x: number; // Position on map (percentage)
   y: number; // Position on map (percentage)
 }
@@ -34,19 +36,6 @@ export interface GameState {
   researchCommittedDoctors: number; // Doctors allocated to research investment
   lastVaccineDelta: number; // Progress gained during the last month advancement
   pendingMonthlyChoices: MonthlyChoiceOption[]; // Monthly choice options that persist until selected
-}
-
-export interface Country {
-  id: string;
-  name: string;
-  population: number;
-  infectionLevel: number; // 0-100
-  doctorsAssigned: number;
-  isHotspot: boolean;
-  importance: number; // 0-100 strategic importance
-  value: number; // 0-100 economic value
-  x: number; // Position on map (percentage)
-  y: number; // Position on map (percentage)
 }
 
 const initialCountries: Country[] = [
@@ -104,6 +93,20 @@ export const useGameState = () => {
 
   const [countries, setCountries] = useState<Country[]>(initialCountries);
 
+  // Helper functions to reduce code duplication
+  const getTotalAssignedDoctors = useCallback(() => {
+    return countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+  }, [countries]);
+
+  const calculateExpectedAvailableDoctors = useCallback((totalDoctors: number, researchCommitted: number = 0) => {
+    const totalAssigned = getTotalAssignedDoctors();
+    return Math.max(0, totalDoctors - totalAssigned - researchCommitted);
+  }, [getTotalAssignedDoctors]);
+
+  const clampToPercentage = useCallback((value: number) => {
+    return Math.max(0, Math.min(100, value));
+  }, []);
+
   // Generate monthly choice options
   const generateMonthlyChoices = useCallback((): MonthlyChoiceOption[] => {
     const options: MonthlyChoiceOption[] = [
@@ -139,12 +142,12 @@ export const useGameState = () => {
     // Randomize initial country importance and values slightly for each game
     const randomizedCountries = initialCountries.map(country => ({
       ...country,
-      importance: Math.max(0, Math.min(100, country.importance + (Math.random() * 10 - 5))),
-      value: Math.max(0, Math.min(100, country.value + (Math.random() * 10 - 5))),
+      importance: clampToPercentage(country.importance + (Math.random() * 10 - 5)),
+      value: clampToPercentage(country.value + (Math.random() * 10 - 5)),
     }));
     
     setCountries(randomizedCountries);
-  }, [generateMonthlyChoices]);
+  }, [generateMonthlyChoices, clampToPercentage]);
 
   const allocateDoctor = useCallback((countryId: string) => {
     if (gameState.availableDoctors <= 0) {
@@ -227,7 +230,7 @@ export const useGameState = () => {
     }
 
     // Calculate infection spread and vaccine progress
-    const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+    const totalAssignedDoctors = getTotalAssignedDoctors();
     const hotspotCoverage = countries
       .filter(c => c.isHotspot)
       .reduce((sum, country) => sum + (country.doctorsAssigned > 0 ? 1 : 0), 0);
@@ -252,11 +255,11 @@ export const useGameState = () => {
       doctorsLostThisMonth = Math.floor(Math.random() * 2) + 1; // Lose 1 or 2 doctors
       
       // Calculate total assigned doctors to ensure available doctors count is valid
-      const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
+      const totalAssignedDoctors = getTotalAssignedDoctors();
       
       setGameState(prev => {
         const newTotalDoctors = Math.max(0, prev.totalDoctors - doctorsLostThisMonth);
-        const newAvailableDoctors = Math.max(0, newTotalDoctors - totalAssignedDoctors - (prev.researchCommittedDoctors || 0));
+        const newAvailableDoctors = calculateExpectedAvailableDoctors(newTotalDoctors, prev.researchCommittedDoctors || 0);
         
         return {
           ...prev,
@@ -290,7 +293,7 @@ export const useGameState = () => {
     }
     
     // Slower vaccine progress convergence (monotonic: never decrease)
-    const computedVaccineProgress = Math.max(0, Math.min(100, gameState.vaccineProgress + (baseVaccineProgress - gameState.vaccineProgress) * 0.08 + vaccineBoost)); // Reduced from 0.1 to 0.08
+    const computedVaccineProgress = clampToPercentage(gameState.vaccineProgress + (baseVaccineProgress - gameState.vaccineProgress) * 0.08 + vaccineBoost); // Reduced from 0.1 to 0.08
     let newVaccineProgress = Math.max(gameState.vaccineProgress, computedVaccineProgress);
     const vaccineDelta = Math.max(0, newVaccineProgress - gameState.vaccineProgress);
 
@@ -314,9 +317,9 @@ export const useGameState = () => {
       // Base infection spread with time difficulty and event impact
       const baseInfectionSpread = 15 + timeDifficulty + eventImpact; // Base spread rate
       
-      const newInfectionLevel = Math.max(0, Math.min(100, 
+      const newInfectionLevel = clampToPercentage(
         country.infectionLevel + (baseInfectionSpread * 0.8 * importanceFactor) - doctorEffect + volatility
-      )); // Increased infection spread factor from 0.7 to 0.8
+      ); // Increased infection spread factor from 0.7 to 0.8
 
       // More significant and dynamic value and importance shifts
       // Countries with higher infection levels become more important (crisis response)
@@ -332,10 +335,10 @@ export const useGameState = () => {
       // Economic value shifts based on infection level - countries with high infection see economic decline
       const economicImpact = country.infectionLevel > 60 ? -3 : country.infectionLevel > 40 ? -1 : 1;
       
-      const newValue = Math.max(0, Math.min(100, country.value + randomFluctuation + timeFactor + economicImpact));
-      const newImportance = Math.max(0, Math.min(100, 
+      const newValue = clampToPercentage(country.value + randomFluctuation + timeFactor + economicImpact);
+      const newImportance = clampToPercentage(
         country.importance + infectionImpact + timeFactor + randomFluctuation
-      ));
+      );
 
       // Hotspot status can change based on infection level and importance
       let newHotspotStatus = country.isHotspot;
@@ -391,8 +394,7 @@ export const useGameState = () => {
           break;
         case 'addDoctors': {
           const newTotalDoctors = gameState.totalDoctors + monthlyChoiceEffect.value;
-          const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-          const expectedAvailable = Math.max(0, newTotalDoctors - totalAssignedDoctors - (gameState.researchCommittedDoctors || 0));
+          const expectedAvailable = calculateExpectedAvailableDoctors(newTotalDoctors, gameState.researchCommittedDoctors || 0);
           setGameState(prev => ({
             ...prev,
             totalDoctors: newTotalDoctors,
@@ -411,8 +413,7 @@ export const useGameState = () => {
           break;
         case 'loseDoctors': {
           const newTotalDoctorsLoss = Math.max(0, gameState.totalDoctors - monthlyChoiceEffect.value);
-          const totalAssignedDoctorsLoss = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-          const expectedAvailableLoss = Math.max(0, newTotalDoctorsLoss - totalAssignedDoctorsLoss - (gameState.researchCommittedDoctors || 0));
+          const expectedAvailableLoss = calculateExpectedAvailableDoctors(newTotalDoctorsLoss, gameState.researchCommittedDoctors || 0);
           setGameState(prev => ({
             ...prev,
             totalDoctors: newTotalDoctorsLoss,
@@ -450,7 +451,7 @@ export const useGameState = () => {
       monthlyEvents: eventMessages,
       pendingMonthlyChoices: newMonthlyChoices,
     }));
-  }, [gameState, countries, generateMonthlyChoices]);
+  }, [gameState, countries, generateMonthlyChoices, getTotalAssignedDoctors, calculateExpectedAvailableDoctors, clampToPercentage]);
 
   const resetGame = useCallback(() => {
     setGameState(prev => ({ ...prev, gameStatus: 'menu' }));
@@ -465,8 +466,7 @@ export const useGameState = () => {
     } else if (gameState.availableDoctors >= 1) {
       setGameState(prev => {
         const newResearchCommitted = (prev.researchCommittedDoctors || 0) + 1;
-        const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-        const expectedAvailable = Math.max(0, prev.totalDoctors - totalAssignedDoctors - newResearchCommitted);
+        const expectedAvailable = calculateExpectedAvailableDoctors(prev.totalDoctors, newResearchCommitted);
         return ({
           ...prev,
           researchCommittedDoctors: newResearchCommitted,
@@ -474,13 +474,12 @@ export const useGameState = () => {
         });
       });
     }
-  }, [gameState.availableDoctors, countries]);
+  }, [gameState.availableDoctors, calculateExpectedAvailableDoctors]);
 
   const researchRecall = useCallback(() => {
     if ((gameState.researchCommittedDoctors || 0) > 0) {
       setGameState(prev => {
-        const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-        const newAvailableDoctors = Math.max(0, prev.totalDoctors - totalAssignedDoctors);
+        const newAvailableDoctors = calculateExpectedAvailableDoctors(prev.totalDoctors, 0);
         return ({
           ...prev,
           researchCommittedDoctors: 0,
@@ -488,13 +487,12 @@ export const useGameState = () => {
         });
       });
     }
-  }, [gameState.researchCommittedDoctors, countries]);
+  }, [gameState.researchCommittedDoctors, calculateExpectedAvailableDoctors]);
 
   const addDoctors = useCallback((num: number) => {
     setGameState(prev => {
       const newTotal = prev.totalDoctors + num;
-      const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-      const expectedAvailable = Math.max(0, newTotal - totalAssignedDoctors - (prev.researchCommittedDoctors || 0));
+      const expectedAvailable = calculateExpectedAvailableDoctors(newTotal, prev.researchCommittedDoctors || 0);
       return ({
         ...prev,
         availableDoctors: expectedAvailable,
@@ -502,13 +500,12 @@ export const useGameState = () => {
         monthlyEvents: [...prev.monthlyEvents, `Recruited ${num} new doctors.`]
       });
     });
-  }, [countries]);
+  }, [calculateExpectedAvailableDoctors]);
 
   const loseDoctors = useCallback((num: number) => {
     setGameState(prev => {
       const newTotal = Math.max(0, prev.totalDoctors - num);
-      const totalAssignedDoctors = countries.reduce((sum, c) => sum + c.doctorsAssigned, 0);
-      const expectedAvailable = Math.max(0, newTotal - totalAssignedDoctors - (prev.researchCommittedDoctors || 0));
+      const expectedAvailable = calculateExpectedAvailableDoctors(newTotal, prev.researchCommittedDoctors || 0);
       return ({
         ...prev,
         availableDoctors: expectedAvailable,
@@ -516,7 +513,7 @@ export const useGameState = () => {
         monthlyEvents: [...prev.monthlyEvents, `${num} doctors lost due to unforeseen circumstances.`]
       });
     });
-  }, [countries]);
+  }, [calculateExpectedAvailableDoctors]);
 
   const increaseGlobalInfection = useCallback((value: number) => {
     setGameState(prev => ({
@@ -543,8 +540,7 @@ export const useGameState = () => {
 
   // Validation function to ensure doctor counts are consistent
   const validateDoctorCounts = useCallback(() => {
-    const totalAssignedDoctors = countries.reduce((sum, country) => sum + country.doctorsAssigned, 0);
-    const expectedAvailableDoctors = gameState.totalDoctors - totalAssignedDoctors - (gameState.researchCommittedDoctors || 0);
+    const expectedAvailableDoctors = calculateExpectedAvailableDoctors(gameState.totalDoctors, gameState.researchCommittedDoctors || 0);
     
     if (gameState.availableDoctors !== expectedAvailableDoctors) {
       console.warn(`Doctor count mismatch detected. Expected available: ${expectedAvailableDoctors}, actual: ${gameState.availableDoctors}`);
@@ -554,7 +550,7 @@ export const useGameState = () => {
         availableDoctors: Math.max(0, Math.min(expectedAvailableDoctors, prev.totalDoctors)),
       }));
     }
-  }, [countries, gameState.availableDoctors, gameState.totalDoctors, gameState.researchCommittedDoctors]);
+  }, [gameState.availableDoctors, gameState.totalDoctors, gameState.researchCommittedDoctors, calculateExpectedAvailableDoctors]);
 
   return {
     gameState,
