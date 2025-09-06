@@ -1,10 +1,14 @@
-interface GameHUDProps {
+import React from 'react';
+
+export interface GameHUDProps {
   availableDoctors: number;
+  totalDoctors: number;
   currentMonth: number;
   currentYear: number;
   globalInfection: number;
   vaccineProgress: number;
   onAdvanceMonth: () => void;
+  onResearchInvestment: () => void;
 }
 
 const monthNames = [
@@ -12,13 +16,15 @@ const monthNames = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-export const GameHUD = ({ 
-  availableDoctors, 
-  currentMonth, 
-  currentYear, 
-  globalInfection, 
+export const GameHUD = ({
+  availableDoctors,
+  totalDoctors,
+  currentMonth,
+  currentYear,
+  globalInfection,
   vaccineProgress,
-  onAdvanceMonth 
+  onAdvanceMonth,
+  onResearchInvestment,
 }: GameHUDProps) => {
   const getInfectionColor = (level: number) => {
     if (level < 25) return "bg-health-good";
@@ -41,8 +47,8 @@ export const GameHUD = ({
           <div className="flex items-center space-x-2">
             <span className="text-primary-glow text-lg">⚕️</span>
             <div>
-              <div className="text-sm text-muted-foreground">Available Doctors</div>
-              <div className="text-xl font-bold text-foreground">{availableDoctors}</div>
+              <div className="text-sm text-muted-foreground">Doctors (Avail/Total)</div>
+              <div className="text-xl font-bold text-foreground">{availableDoctors}/{totalDoctors}</div>
             </div>
           </div>
 
@@ -92,6 +98,13 @@ export const GameHUD = ({
 
         {/* Right side - Actions */}
         <div className="flex items-center space-x-4">
+          <button
+            onClick={onResearchInvestment}
+            disabled={availableDoctors < 2 || (currentYear === 2021 && currentMonth < 7)}
+            className="bg-accent hover:bg-accent/80 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
+          >
+            Research Investment (-2 Docs) 
+          </button>
           <button
             onClick={onAdvanceMonth}
             className="bg-primary hover:bg-primary-glow text-primary-foreground px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105 red-glow"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Country } from '@/hooks/useGameState';
 
 interface WorldMapProps {
@@ -10,6 +10,15 @@ interface WorldMapProps {
 
 export const WorldMap = ({ countries, onAllocateDoctor, onRecallDoctor, availableDoctors }: WorldMapProps) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+
+  useEffect(() => {
+    if (selectedCountry) {
+      const updatedCountry = countries.find(c => c.id === selectedCountry.id);
+      if (updatedCountry) {
+        setSelectedCountry(updatedCountry);
+      }
+    }
+  }, [countries, selectedCountry]);
 
   const getInfectionIntensity = (level: number) => {
     if (level < 25) return "bg-secondary border-muted";

@@ -16,6 +16,7 @@ export const HealthcareMeltdown = () => {
     recallDoctor,
     advanceMonth,
     resetGame,
+    researchInvestment,
   } = useGameState();
 
   const handleStartGame = () => {
@@ -71,11 +72,13 @@ export const HealthcareMeltdown = () => {
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <GameHUD
         availableDoctors={gameState.availableDoctors}
+        totalDoctors={gameState.totalDoctors}
         currentMonth={gameState.currentMonth}
         currentYear={gameState.currentYear}
         globalInfection={gameState.globalInfection}
         vaccineProgress={gameState.vaccineProgress}
         onAdvanceMonth={advanceMonth}
+        onResearchInvestment={researchInvestment}
       />
       
       <div className="flex-1 relative">

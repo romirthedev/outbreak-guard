@@ -41,7 +41,7 @@ const randomEvents = [
   "Successful lockdown measures - infection stabilizes temporarily",
   "Medical supply shortage - doctor effectiveness reduced",
   "International cooperation increases - vaccine research boosted",
-  "Healthcare worker burnout reported globally",
+  "Doctor burnout - lose 1 doctor permanently",
   "Breakthrough treatment shows promise - infection slowed",
   "Social distancing fatigue - infection rates climb",
 ];
@@ -129,7 +129,17 @@ export const useGameState = () => {
     const eventImpact = Math.random() * 10 - 5; // -5 to +5
     infectionChange += eventImpact;
 
-    const newGlobalInfection = Math.max(0, Math.min(100, gameState.globalInfection + infectionChange));
+    let newGlobalInfection = Math.max(0, Math.min(100, gameState.globalInfection + infectionChange));
+
+    let doctorsLostThisMonth = 0;
+    if (randomEvent.includes("Doctor burnout")) {
+      doctorsLostThisMonth = Math.floor(Math.random() * 2) + 1; // Lose 1 or 2 doctors
+      setGameState(prev => ({
+        ...prev,
+        totalDoctors: Math.max(0, prev.totalDoctors - doctorsLostThisMonth),
+        availableDoctors: Math.max(0, prev.availableDoctors - doctorsLostThisMonth),
+      }));
+    }
 
     // Vaccine progress (2% base per month, reaching 100% by Jan 2025)
     const monthsElapsed = (newYear - 2021) * 12 + newMonth - 1;
@@ -139,7 +149,7 @@ export const useGameState = () => {
     // Update country infection levels
     setCountries(prev => 
       prev.map(country => {
-        const doctorEffect = country.doctorsAssigned * 2;
+        const doctorEffect = country.doctorsAssigned * (country.isHotspot ? 3 : 1.5); // Hotspots more effective
         const newInfectionLevel = Math.max(0, Math.min(100, 
           country.infectionLevel + (infectionChange * 0.5) - doctorEffect + (Math.random() * 10 - 5)
         ));
@@ -162,12 +172,26 @@ export const useGameState = () => {
       globalInfection: newGlobalInfection,
       vaccineProgress: newVaccineProgress,
       gameStatus: newGameStatus,
-      monthlyEvents: [randomEvent],
+      monthlyEvents: [randomEvent, ...(doctorsLostThisMonth > 0 ? [`Doctor burnout: Lost ${doctorsLostThisMonth} doctor(s).`] : [])],
     }));
   }, [gameState, countries]);
 
   const resetGame = useCallback(() => {
     setGameState(prev => ({ ...prev, gameStatus: 'menu' }));
+  }, []);
+
+  const researchInvestment = useCallback(() => {
+    setGameState(prev => {
+      if (prev.availableDoctors < 2) return prev; // Not enough doctors
+
+      return {
+        ...prev,
+        availableDoctors: prev.availableDoctors - 2,
+        totalDoctors: prev.totalDoctors - 2, // Permanently sacrifice doctors
+        vaccineProgress: Math.min(100, prev.vaccineProgress + 10), // Boost vaccine progress
+        monthlyEvents: [...prev.monthlyEvents, "Research Investment: Vaccine research boosted!"]
+      };
+    });
   }, []);
 
   return {
@@ -178,5 +202,6 @@ export const useGameState = () => {
     recallDoctor,
     advanceMonth,
     resetGame,
+    researchInvestment,
   };
 };
